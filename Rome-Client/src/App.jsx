@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Welcome from './pages/Welcome'
 import Messages from './pages/Messages'
+import Town from './pages/Town'
 import './App.css'
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/town" element={<Town />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -5,6 +5,37 @@
   padding: 20px;
 }
 
+/* Page Transition Animations */
+@keyframes pageTransitionIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageTransitionInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-transition {
+  animation: pageTransitionIn 0.5s ease-out;
+}
+
+.page-transition-scale {
+  animation: pageTransitionInScale 0.5s ease-out;
+}
+
 /* Welcome Page */
 .welcome-container {
   flex: 1;
@@ -12,13 +43,13 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  animation: pageTransitionIn 0.5s ease-out;
 }
 
 .welcome-content {
   text-align: center;
   color: white;
   max-width: 600px;
-  animation: fadeIn 0.6s ease-out;
 }
 
 .welcome-content h1 {
@@ -93,11 +124,33 @@
   transform: translateY(0);
 }
 
+.button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button-group .enter-btn {
+  flex: 1;
+  min-width: 150px;
+}
+
+.town-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 8px 32px rgba(245, 87, 108, 0.4);
+}
+
+.town-btn:hover {
+  box-shadow: 0 12px 40px rgba(245, 87, 108, 0.6);
+}
+
 /* Messages Page */
 .messages-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  animation: pageTransitionIn 0.5s ease-out;
 }
 
 .header {
@@ -323,5 +376,13 @@
 
   .message-form {
     padding: 15px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group .enter-btn {
+    width: 100%;
   }
 }

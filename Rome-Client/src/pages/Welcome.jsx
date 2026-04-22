@@ -18,9 +18,14 @@ export default function Welcome() {
           </ul>
         </div>
 
-        <button onClick={() => navigate('/messages')} className="enter-btn">
-          Enter Messages
-        </button>
+        <div className="button-group">
+          <button onClick={() => navigate('/messages')} className="enter-btn">
+            Enter Messages
+          </button>
+          <button onClick={() => navigate('/town')} className="enter-btn town-btn">
+            Explore Town
+          </button>
+        </div>
       </div>
     </div>
   )
