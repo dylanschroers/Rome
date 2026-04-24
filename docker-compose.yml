@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rome-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_ORIGINS=*
+    volumes:
+      - ollama_data:/root/.ollama
+    command: serve
+    networks:
+      - rome-network
+
+  rome-server:
+    build:
+      context: ./Rome-Server
+      dockerfile: Dockerfile
+    container_name: rome-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+    networks:
+      - rome-network
+    command: npm start
+
+volumes:
+  ollama_data:
+
+networks:
+  rome-network:
+    driver: bridge

@@ -26,6 +26,63 @@ app.get('/api/messages', (req, res) => {
   res.json(messages);
 });
 
+// LLM Chat endpoint
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { subject, message, history } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // TODO: Connect to local LLM (Ollama, LM Studio, etc.)
+    // For now, this is a placeholder that echoes back a response
+    // Replace with actual LLM call
+    const response = await callLocalLLM(subject, message, history);
+
+    res.json({ response });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process chat request' });
+  }
+});
+
+// Placeholder function to call local LLM
+// Update this to connect to your local LLM service (Ollama, LM Studio, etc.)
+async function callLocalLLM(subject, message, history) {
+  try {
+    // Connect to local Ollama instance
+    const ollamaHost = 'http://localhost:11434';
+    const model = 'llama2';
+
+    // Format the prompt with subject context
+    const systemPrompt = `You are a ${subject} tutor for a student in ancient Rome. Provide clear, educational responses to help the student learn ${subject}. Keep your answers concise but informative.`;
+    
+    const prompt = `${systemPrompt}\n\nStudent: ${message}\n\nTutor:`;
+
+    const response = await fetch(`${ollamaHost}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        stream: false,
+        temperature: 0.7,
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.response.trim();
+  } catch (error) {
+    console.error('LLM error:', error);
+    return `I encountered an error connecting to the learning service. Please ensure Ollama is running on http://localhost:11434. Error: ${error.message}`;
+  }
+}
+
 // WebSocket (Socket.io) events
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);

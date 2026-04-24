@@ -4,17 +4,30 @@ import './Town.css'
 export default function Town() {
   const navigate = useNavigate()
 
-  const buildings = [
-    { id: 1, x: 50, y: 50, width: 120, height: 80, color: '#e74c3c', label: 'Tavern', path: '/tavern' },
-    { id: 2, x: 220, y: 50, width: 120, height: 80, color: '#3498db', label: 'Library', path: '/library' },
-    { id: 3, x: 390, y: 50, width: 120, height: 80, color: '#f39c12', label: 'Market', path: '/market' },
-    { id: 4, x: 50, y: 180, width: 120, height: 80, color: '#9b59b6', label: 'Temple', path: '/temple' },
-    { id: 5, x: 220, y: 180, width: 120, height: 80, color: '#1abc9c', label: 'Theater', path: '/theater' },
-    { id: 6, x: 390, y: 180, width: 120, height: 80, color: '#e67e22', label: 'Smithy', path: '/smithy' },
-    { id: 7, x: 50, y: 310, width: 120, height: 80, color: '#2ecc71', label: 'Garden', path: '/garden' },
-    { id: 8, x: 220, y: 310, width: 120, height: 80, color: '#34495e', label: 'Guard Tower', path: '/tower' },
-    { id: 9, x: 390, y: 310, width: 120, height: 80, color: '#c0392b', label: 'Inn', path: '/inn' },
+  const buildingData = [
+    { id: 1, width: 120, height: 80, color: '#e74c3c', label: 'School', path: '/school' },
+    { id: 2, width: 120, height: 80, color: '#3498db', label: 'Library', path: '/library' },
+    { id: 3, width: 120, height: 80, color: '#f39c12', label: 'Market', path: '/market' },
+    { id: 4, width: 120, height: 80, color: '#9b59b6', label: 'Temple', path: '/temple' },
+    { id: 5, width: 120, height: 80, color: '#1abc9c', label: 'Theater', path: '/theater' },
+    { id: 6, width: 120, height: 80, color: '#e67e22', label: 'Smithy', path: '/smithy' },
   ]
+
+  // Calculate circular positions for buildings around empty center space
+  const centerX = 280
+  const centerY = 220
+  const radius = 180
+
+  const buildings = buildingData.map((building, index) => {
+    const angle = (Math.PI * 2 / buildingData.length) * index
+    const cx = centerX + radius * Math.cos(angle)
+    const cy = centerY + radius * Math.sin(angle)
+    return {
+      ...building,
+      x: cx - building.width / 2,
+      y: cy - building.height / 2,
+    }
+  })
 
   return (
     <div className="town-page">
@@ -31,9 +44,9 @@ export default function Town() {
           {/* Background - grass */}
           <rect width="560" height="440" fill="#90ee90" />
 
-          {/* Roads */}
-          <rect x="0" y="140" width="560" height="40" fill="#8b7355" />
-          <rect x="170" y="0" width="40" height="440" fill="#8b7355" />
+          {/* Empty circular space in center */}
+          <circle cx="280" cy="220" r="100" fill="#b8d4e6" opacity="0.6" />
+          <circle cx="280" cy="220" r="100" fill="none" stroke="#666" strokeWidth="2" strokeDasharray="5,5" />
 
           {/* Buildings */}
           {buildings.map((building) => (
@@ -110,10 +123,6 @@ export default function Town() {
               </text>
             </g>
           ))}
-
-          {/* Well in center (decorative) */}
-          <circle cx="280" cy="190" r="25" fill="#696969" stroke="#333" strokeWidth="2" />
-          <circle cx="280" cy="190" r="20" fill="#8b7355" />
         </svg>
       </main>
 
