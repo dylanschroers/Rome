@@ -25,6 +25,9 @@ export default function Welcome() {
           <button onClick={() => navigate('/town')} className="enter-btn town-btn">
             Explore Town
           </button>
+          <button onClick={() => navigate('/town-messages')} className="enter-btn combined-btn">
+            Town & Messages
+          </button>
         </div>
       </div>
     </div>
