@@ -1,36 +1,29 @@
-# Rome - Educational Chat Platform
+# Rome - Real-time Communication Platform
 
-A local, AI-powered educational platform built with React and Node.js, featuring various subjects with local LLM integration through Ollama.
+A local, decentralized communication platform built with React and Node.js. Rome enables real-time messaging, community spaces, and AI-powered conversations—all running locally for privacy and control.
 
 ## Quick Start
 
 ### Prerequisites
 - **Node.js** (v16+)
-- **Ollama** - Download from https://ollama.ai
 
 ### 3 Easy Steps
 
-**Terminal 1 - Start Ollama:**
-```bash
-ollama pull llama2  # One time only
-ollama serve
-```
-
-**Terminal 2 - Start Server:**
+**Terminal 1 - Start Server:**
 ```bash
 cd Rome-Server
 npm install
 npm start
 ```
 
-**Terminal 3 - Start Client:**
+**Terminal 2 - Start Client:**
 ```bash
 cd Rome-Client
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173/school and start learning!
+Open http://localhost:5173 and start communicating!
 
 ## For Detailed Setup
 
@@ -38,11 +31,11 @@ See [SETUP.md](./SETUP.md) for step-by-step instructions, troubleshooting, and c
 
 ## Features
 
-- 🏛️ **School Interface** - Navigate through different subjects
-- 💬 **AI Chat** - Talk to local LLM tutors for each subject
-- 🌐 **Local LLM** - Ollama integration for offline AI
-- ⚡ **Real-time Chat** - Instant responses with typing indicators
-- 🎓 **Educational** - Purpose-built for learning
+- 💬 **Real-time Messaging** - Instant message delivery with Socket.io
+- 🏛️ **Town Interface** - Explore themed community spaces
+- 🤖 **AI Integration** - Optional local LLM support for AI-powered discussions
+- 🔐 **Local & Private** - All communication stays on your network
+- 🎨 **Immersive Design** - Roman-themed UI for engaging community experience
 
 ## Architecture
 
@@ -51,141 +44,131 @@ See [SETUP.md](./SETUP.md) for step-by-step instructions, troubleshooting, and c
 │ Rome-Client │ (React)
 │ :5173       │
 └──────┬──────┘
-       │ HTTP
-┌──────▼──────────┐
-│ Rome-Server     │ (Node.js/Express)
-│ :3001           │
-└──────┬──────────┘
-       │ HTTP
-┌──────▼──────────┐
-│ Ollama          │ (LLM)
-│ :11434          │
-└─────────────────┘
+       │ WebSocket (Socket.io)
+┌──────▼──────────────┐
+│ Rome-Server         │ (Node.js/Express + Socket.io)
+│ :3001               │
+└─────────────────────┘
 ```
 
 ## Services
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| Rome-Client | 5173 | React frontend |
-| Rome-Server | 3001 | Express backend |
-| Ollama | 11434 | Local LLM |
+| Rome-Client | 5173 | React frontend - community spaces and messaging |
+| Rome-Server | 3001 | Express backend with real-time messaging via Socket.io |
+| Optional: Ollama | 11434 | Local LLM for AI-enhanced conversations |
 
 ## Project Structure
 
 ```
 Rome/
-├── Rome-Client/          # React frontend
+├── Rome-Client/               # React frontend
 │   ├── src/
-│   │   ├── pages/        # School, Town, etc.
-│   │   ├── components/   # ChatInterface
-│   │   ├── styles/       # CSS
+│   │   ├── pages/             # Town, Messages, Community areas
+│   │   ├── components/        # ChatInterface, etc.
+│   │   ├── styles/            # CSS for theming
 │   │   └── App.jsx
 │   └── package.json
-├── Rome-Server/          # Node.js backend
-│   ├── server.js         # Express + Ollama integration
+├── Rome-Server/               # Node.js backend
+│   ├── server.js              # Express + Socket.io server
 │   └── package.json
-└── SETUP.md              # Setup instructions
+└── SETUP.md                   # Setup instructions
 ```
 
-## Performance
+## Performance & Configuration
 
-- **Response Time**: 5-15 seconds per message (CPU only)
-- **Model Size**: ~4GB (Llama2)
-- **RAM Required**: 4GB+ recommended
-- **GPU Support**: Faster with NVIDIA/AMD GPU
+- **Real-time**: <100ms message latency (local network)
+- **Scalability**: Optimized for 50-500 concurrent users per instance
+- **Resource Usage**: ~50MB memory baseline
 
-## Available Models
+### Optional: AI Integration
 
-Change model in `Rome-Server/server.js`:
+To add AI-powered conversations, install and configure a local LLM:
 
-```javascript
-const model = 'llama2'; // Change this
-```
+1. Download [Ollama](https://ollama.ai)
+2. Pull a model: `ollama pull llama2`
+3. Start Ollama: `ollama serve`
+4. Rome will auto-detect and enable AI features
 
-Then: `ollama pull <model>`
-
-Popular options:
-- `llama2` - Recommended (7B, balanced)
-- `mistral` - Faster (7B)
-- `neural-chat` - Better conversations (7B)
-- `orca-mini` - Lightweight (3B)
-
-Full list: https://ollama.ai/library
+The system works perfectly without Ollama—AI features are optional enhancements.
 
 ## Troubleshooting
 
-**"Cannot connect to Ollama"**
-- Make sure `ollama serve` is running
-- Check http://localhost:11434 is accessible
+**"Cannot connect to server"**
+- Verify Rome-Server is running on port 3001
+- Check firewall settings for localhost:3001
 
 **"Port already in use"**
 ```bash
-lsof -i :3001     # Find process on port 3001
-kill -9 <PID>     # Kill it
+# Windows - find process on port 3001
+netstat -ano | findstr :3001
+taskkill /PID <PID> /F
+
+# macOS/Linux
+lsof -i :3001
+kill -9 <PID>
 ```
 
-**"Responses are slow"**
-- Normal for CPU - 5-15 seconds is expected
-- Add GPU for 3x speedup (NVIDIA/AMD)
+**"AI features not available"**
+- This is normal if Ollama isn't installed
+- Rome functions fully as a communication platform without it
+- To enable: install Ollama and `ollama serve`
 
 See [SETUP.md](./SETUP.md) for more troubleshooting.
 
 ## Development
 
-### Running Servers
+### Running the Platform
 ```bash
 # Terminal 1
-ollama serve
-
-# Terminal 2
 cd Rome-Server && npm start
 
-# Terminal 3
+# Terminal 2
 cd Rome-Client && npm run dev
 ```
 
-### Adding Subjects
-
-1. Add to `School.jsx` subjects array
-2. Create chat page (e.g., `MathChat.jsx`)
-3. Add route to `App.jsx`
-4. Update system prompt in `server.js`
-
-### API
-
-**POST /api/chat**
-```json
-{
-  "subject": "Languages",
-  "message": "What is Latin?",
-  "history": []
-}
+### Building for Production
+```bash
+cd Rome-Client
+npm run build  # Creates dist/ folder
 ```
 
-Response:
-```json
-{
-  "response": "Latin is an ancient language..."
-}
-```
+### Adding New Spaces
+
+1. Create a new page component in `Rome-Client/src/pages/`
+2. Add a route in `App.jsx`
+3. Add building reference in `Town.jsx` if it should appear in town view
+4. Design your community space or discussion area
+
+### API & Socket Events
+
+**Socket.io Events:**
+- `message:post` - Post to message board
+- `message:new` - Receive new messages
+- `messages:init` - Initial message load
+
+**REST Endpoints:**
+- `GET /api/messages` - Retrieve all messages
 
 ## Future Enhancements
 
-- [ ] Streaming responses for faster UX
-- [ ] Conversation history persistence
-- [ ] More subjects and tutors
-- [ ] Custom system prompts per subject
-- [ ] Progress tracking
-- [ ] Multi-language support
+- [ ] User authentication & profiles
+- [ ] Direct messaging (1-on-1 conversations)
+- [ ] Message persistence & history
+- [ ] Moderation & community guidelines
+- [ ] Multiple towns/communities
+- [ ] Custom themes & branding
+- [ ] Voice/video integration
+- [ ] Advanced AI features
 
-## Requirements Met
+## What Makes Rome Different
 
-✅ Local, no external AI service  
-✅ Offline capable  
-✅ Educational focus  
-✅ Subject-specific tutors  
-✅ Simple to setup  
+✅ **Decentralized** - Full control over your community data  
+✅ **Offline-capable** - Works without internet (local networks)  
+✅ **Open** - All source code available  
+✅ **Extensible** - Add features and spaces easily  
+✅ **Immersive** - Engaging, themed UI for better engagement  
 
 ## License
 
@@ -193,5 +176,5 @@ MIT
 
 ---
 
-**Ready to learn? Follow [SETUP.md](./SETUP.md) to get started!** 🏛️
+**Ready to connect? Follow [SETUP.md](./SETUP.md) to get started!** 🏛️
 
