@@ -1,6 +1,7 @@
 import { canStep } from './map.js'
 
 export const WALK_TILES_PER_SECOND = 6
+export const RUN_SPEED_MULTIPLIER = 2
 
 const STEP_MS = 1000 / WALK_TILES_PER_SECOND
 
@@ -30,6 +31,7 @@ export function createWalker(x, y, facing = 'down') {
     stepMs: STEP_MS,
     steps: 0,
     route: [],
+    autoRun: false,
   }
 }
 
@@ -78,10 +80,13 @@ export function routeSeconds(from, route) {
 
 // Moves the walker forward by `elapsed` milliseconds. `held` is the direction being
 // held, or null. A held direction takes over from any route.
-export function stepWalker(walker, map, held, elapsed) {
+export function stepWalker(walker, map, held, elapsed, running = false) {
   let remaining = elapsed
 
-  if (held) walker.route = []
+  if (held) {
+    walker.route = []
+    walker.autoRun = false
+  }
 
   while (remaining > 0) {
     if (walker.moving) {
@@ -107,6 +112,7 @@ export function stepWalker(walker, map, held, elapsed) {
 
     if (!direction) {
       walker.route = []
+      walker.autoRun = false
       return
     }
 
@@ -116,13 +122,14 @@ export function stepWalker(walker, map, held, elapsed) {
 
     if (!step) {
       walker.route = []
+      walker.autoRun = false
       return
     }
 
     if (routeTile && !held) walker.route.shift()
     walker.toX = walker.x + step.x
     walker.toY = walker.y + step.y
-    walker.stepMs = stepDuration(step.x, step.y)
+    walker.stepMs = stepDuration(step.x, step.y) / (running || walker.autoRun ? RUN_SPEED_MULTIPLIER : 1)
     walker.moving = true
     walker.progress = 0
 
@@ -131,6 +138,18 @@ export function stepWalker(walker, map, held, elapsed) {
       walker.facing = directionBetween(0, 0, step.x, step.y)
     }
   }
+}
+
+export function placeWalker(walker, x, y, facing) {
+  walker.x = x
+  walker.y = y
+  walker.toX = x
+  walker.toY = y
+  walker.facing = facing
+  walker.moving = false
+  walker.progress = 0
+  walker.route = []
+  walker.autoRun = false
 }
 
 // The walker's exact position in tiles, including how far through a step it is.

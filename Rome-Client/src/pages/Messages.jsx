@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
+import { townAddress } from '../game/places'
 
 export default function Messages() {
   const navigate = useNavigate()
@@ -69,7 +70,7 @@ export default function Messages() {
           <h1>When In Rome</h1>
           <p className="user-id">ID: {userId}</p>
         </div>
-        <button onClick={() => navigate('/town')} className="back-btn">← Back to town</button>
+        <button onClick={() => navigate(townAddress('message-board'))} className="back-btn">← Back to town</button>
       </header>
 
       <main className="main-content">
@@ -110,7 +111,7 @@ export default function Messages() {
       </main>
 
       <footer className="footer">
-        <p>&copy; Rome - End-to-end encrypted messaging</p>
+        <p>&copy; Rome</p>
       </footer>
     </div>
   )

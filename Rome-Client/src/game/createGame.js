@@ -1,23 +1,41 @@
 import { createKeyStack, directionForKey } from './keys.js'
 import { districtNameAt, generateTown } from './map.js'
-import { buildGroundCanvas, buildSolidCanvas, drawFrame } from './render.js'
+import { doorStart, findPlace, placeNear, placeUnderTile } from './places.js'
+import { buildGroundCanvas, buildSolidCanvas, drawFrame, drawMiniMap } from './render.js'
 import { findRoute } from './route.js'
 import { computeCamera, computeLayout, screenToTile } from './view.js'
-import { createWalker, routeStart, stepWalker, walkerPosition } from './walker.js'
+import { createWalker, placeWalker, routeStart, stepWalker, walkerPosition } from './walker.js'
 
 const TICK_MS = 1000 / 60
 const LONGEST_FRAME_MS = 100
 const TAP_DISTANCE_PX = 12
+const AUTO_RUN_TILES = 12
 const TEXT_ENTRY = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
+const ENTER_KEYS = new Set(['KeyE', 'Enter', 'Space'])
+const RUN_KEYS = new Set(['ShiftLeft', 'ShiftRight'])
 
 // Starts the game on a canvas and returns a function that stops it and cleans up.
 // React only mounts this; game state stays in here and never re-renders the page.
-export function createGame({ canvas, container, labels, onDistrict, onFirstMove, onDebug, debug: startDebug }) {
+export function createGame({
+  canvas,
+  container,
+  labels,
+  startAt,
+  onDistrict,
+  onFirstMove,
+  onNearby,
+  onEnterPlace,
+  onOpenPlaces,
+  onDebug,
+  debug: startDebug,
+}) {
   const map = generateTown()
   const ctx = canvas.getContext('2d', { alpha: false })
   const ground = buildGroundCanvas(map)
   const keys = createKeyStack()
-  const walker = createWalker(map.spawn.x, map.spawn.y, map.spawn.facing)
+  const startPlace = findPlace(map, startAt)
+  const startTile = startPlace ? doorStart(startPlace) : map.spawn
+  const walker = createWalker(startTile.x, startTile.y, startTile.facing)
 
   let layout = null
   let camera = { x: 0, y: 0 }
@@ -35,6 +53,10 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
   let framesSince = 0
   let fps = 0
   let slowestFrame = 0
+  let running = false
+  let paused = false
+  let nearby = null
+  let pendingPlace = null
 
   function placeLabels() {
     labels.style.setProperty('--game-pixel', `${layout.cssPerPixel}px`)
@@ -74,6 +96,8 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
     leftover += Math.min(elapsed, LONGEST_FRAME_MS)
     const held = keys.current()
 
+    if (held) pendingPlace = null
+
     if (held && marker) {
       marker = null
       dirty = true
@@ -84,7 +108,7 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
       const beforeY = walker.y
       const wasMoving = walker.moving
       const facing = walker.facing
-      stepWalker(walker, map, held, TICK_MS)
+      stepWalker(walker, map, held, TICK_MS, running)
       leftover -= TICK_MS
       keys.used()
 
@@ -108,6 +132,18 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
     if (name !== district) {
       district = name
       onDistrict(name)
+    }
+
+    const near = placeNear(map, walker.x, walker.y)
+    if (near !== nearby) {
+      nearby = near
+      onNearby(near)
+    }
+
+    if (pendingPlace && !walker.moving && walker.route.length === 0) {
+      const place = pendingPlace
+      pendingPlace = null
+      if (near === place) onEnterPlace(place)
     }
   }
 
@@ -134,7 +170,7 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
     }
 
     if (!layout) return
-    update(elapsed)
+    if (!paused) update(elapsed)
     if (dirty) render()
   }
 
@@ -165,24 +201,51 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
       return
     }
 
+    if (paused) return
+
+    if (RUN_KEYS.has(event.code)) {
+      running = true
+      return
+    }
+
+    if (event.code === 'KeyM') {
+      onOpenPlaces()
+      return
+    }
+
+    if (ENTER_KEYS.has(event.code)) {
+      if (event.target?.closest?.('button, a') && event.code !== 'KeyE') return
+      if (nearby?.open && !event.repeat) {
+        event.preventDefault()
+        onEnterPlace(nearby)
+      }
+      return
+    }
+
     if (directionForKey(event.code)) {
       event.preventDefault()
       keys.press(event.code)
     }
   }
 
-  const onKeyUp = (event) => keys.release(event.code)
+  const onKeyUp = (event) => {
+    if (RUN_KEYS.has(event.code)) running = false
+    keys.release(event.code)
+  }
 
-  const releaseEverything = () => keys.clear()
+  const releaseEverything = () => {
+    keys.clear()
+    running = false
+  }
 
   const onVisibility = () => {
-    keys.clear()
+    releaseEverything()
     if (document.hidden) stop()
     else start()
   }
 
   const onPointerDown = (event) => {
-    if (event.button !== 0) return
+    if (event.button !== 0 || paused) return
     pointer = { id: event.pointerId, x: event.clientX, y: event.clientY }
   }
 
@@ -194,9 +257,12 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
 
     const box = canvas.getBoundingClientRect()
     const target = screenToTile(event.clientX - box.left, event.clientY - box.top, layout, camera)
-    const route = findRoute(map, routeStart(walker), target)
+    const place = placeUnderTile(map, target.x, target.y)
+    const route = findRoute(map, routeStart(walker), place ? place.door : target)
     walker.route = route
+    walker.autoRun = route.length > AUTO_RUN_TILES
     keys.clear()
+    pendingPlace = place?.open ? place : null
     marker = route.length ? route[route.length - 1] : null
     dirty = true
   }
@@ -229,7 +295,29 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
 
   return {
     map,
-    // Read-only look at the game, used by the debug view and automated checks.
+    enterNearby() {
+      if (nearby?.open) onEnterPlace(nearby)
+    },
+    travelTo(id) {
+      const place = findPlace(map, id)
+      if (!place) return
+      const door = doorStart(place)
+      placeWalker(walker, door.x, door.y, door.facing)
+      marker = null
+      pendingPlace = null
+      if (layout) {
+        update(0)
+        render()
+      }
+    },
+    setPaused(value) {
+      paused = value
+      leftover = 0
+      releaseEverything()
+    },
+    drawMiniMap(target) {
+      drawMiniMap(target, map, ground, walker)
+    },
     inspect: () => ({
       x: walker.x,
       y: walker.y,
@@ -240,6 +328,11 @@ export function createGame({ canvas, container, labels, onDistrict, onFirstMove,
       layout: layout && { ...layout },
       marker,
       running: frame !== null,
+      paused,
+      nearby: nearby?.id ?? null,
+      runningKey: running,
+      autoRun: walker.autoRun,
+      stepMs: walker.stepMs,
     }),
     destroy() {
       stop()

@@ -1,16 +1,17 @@
 import { useNavigate } from 'react-router-dom'
+import { townAddress } from '../game/places'
 import './School.css'
 
 export default function School() {
   const navigate = useNavigate()
 
   const subjects = [
-    { id: 1, name: 'Mathematics', color: '#e74c3c', icon: '∑', description: 'Algebra, Geometry, Calculus', path: '/school/math' },
-    { id: 2, name: 'Science', color: '#3498db', icon: '⚗️', description: 'Physics, Chemistry, Biology', path: '/school/science' },
-    { id: 3, name: 'History', color: '#f39c12', icon: '📜', description: 'World & Ancient History', path: '/school/history' },
-    { id: 4, name: 'Literature', color: '#9b59b6', icon: '📚', description: 'Reading, Writing, Analysis', path: '/school/literature' },
-    { id: 5, name: 'Languages', color: '#1abc9c', icon: '🌍', description: 'Latin, Greek, Modern Languages', path: '/school/languages' },
-    { id: 6, name: 'Philosophy', color: '#e67e22', icon: '🤔', description: 'Logic, Ethics, Metaphysics', path: '/school/philosophy' },
+    { id: 1, name: 'Mathematics', color: '#e74c3c', icon: '∑', description: 'Coming soon' },
+    { id: 2, name: 'Science', color: '#3498db', icon: '⚗️', description: 'Coming soon' },
+    { id: 3, name: 'History', color: '#f39c12', icon: '📜', description: 'Coming soon' },
+    { id: 4, name: 'Literature', color: '#9b59b6', icon: '📚', description: 'Coming soon' },
+    { id: 5, name: 'Languages', color: '#1abc9c', icon: '🌍', description: 'Latin, Greek, and more', path: '/school/languages' },
+    { id: 6, name: 'Philosophy', color: '#e67e22', icon: '🤔', description: 'Coming soon' },
   ]
 
   // Position subjects on left and right sides
@@ -35,21 +36,32 @@ export default function School() {
           <h1>School of Rome</h1>
           <p className="subtitle">Select a subject to learn</p>
         </div>
-        <button onClick={() => navigate('/town')} className="back-btn">← Back to Town</button>
+        <button onClick={() => navigate(townAddress('school'))} className="back-btn">← Back to Town</button>
       </header>
 
       <main className="main-content">
-        <svg className="school-map" viewBox="0 0 620 840" preserveAspectRatio="xMidYMid meet">
+        <svg className="school-map" viewBox="0 0 620 500" preserveAspectRatio="xMidYMid meet">
           {/* Background */}
-          <rect width="620" height="840" fill="#f5f5f5" />
+          <rect width="620" height="500" fill="#f5f5f5" />
 
           {/* Subject cards */}
           {positionedSubjects.map((subject) => (
             <g
               key={subject.id}
-              onClick={() => navigate(subject.path)}
+              {...(subject.path ? {
+                onClick: () => navigate(subject.path),
+                onKeyDown: (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    navigate(subject.path)
+                  }
+                },
+                role: 'link',
+                tabIndex: 0,
+                'aria-label': subject.name,
+              } : {})}
               className="subject-card"
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: subject.path ? 'pointer' : 'default', opacity: subject.path ? 1 : 0.5 }}
             >
               {/* Card background */}
               <rect

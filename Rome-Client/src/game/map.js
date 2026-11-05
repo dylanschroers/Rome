@@ -32,19 +32,19 @@ export const DISTRICTS = [
 // Angles are in degrees, clockwise from east. East, west, and south are left open
 // where a path meets the plaza.
 const PLOTS = [
-  { district: 'scholars', name: 'School', angle: -90, open: true },
-  { district: 'scholars', name: 'Library', angle: -140 },
-  { district: 'scholars', name: 'Temple', angle: 180 },
+  { district: 'scholars', id: 'school', name: 'School', angle: -90, path: '/school' },
+  { district: 'scholars', id: 'library', name: 'Library', angle: -140 },
+  { district: 'scholars', id: 'temple', name: 'Temple', angle: 180 },
   { district: 'scholars', name: 'Empty plot', angle: 140 },
   { district: 'scholars', name: 'Empty plot', angle: 40 },
   { district: 'scholars', name: 'Empty plot', angle: -40 },
-  { district: 'forum', name: 'Message board', angle: -90, open: true },
-  { district: 'forum', name: 'Homes', angle: -140 },
-  { district: 'forum', name: 'Senate', angle: -40 },
-  { district: 'forum', name: 'Theater', angle: 140 },
-  { district: 'forum', name: 'Arena', angle: 40 },
-  { district: 'market', name: 'Language stall', angle: -90, open: true },
-  { district: 'market', name: 'Smithy', angle: -40 },
+  { district: 'forum', id: 'message-board', name: 'Message board', angle: -90, path: '/messages' },
+  { district: 'forum', id: 'homes', name: 'Homes', angle: -140 },
+  { district: 'forum', id: 'senate', name: 'Senate', angle: -40 },
+  { district: 'forum', id: 'theater', name: 'Theater', angle: 140 },
+  { district: 'forum', id: 'arena', name: 'Arena', angle: 40 },
+  { district: 'market', id: 'language-stall', name: 'Language stall', angle: -90, path: '/school/languages' },
+  { district: 'market', id: 'smithy', name: 'Smithy', angle: -40 },
   { district: 'market', name: 'Empty plot', angle: -140 },
   { district: 'market', name: 'Empty plot', angle: 40 },
   { district: 'market', name: 'Empty plot', angle: 140 },
@@ -84,9 +84,11 @@ function placeBuilding(plot) {
   }
 
   return {
+    id: plot.id || null,
     name: plot.name,
     district: plot.district,
-    open: Boolean(plot.open),
+    path: plot.path || null,
+    open: Boolean(plot.path),
     x,
     y,
     width: BUILDING_WIDTH,

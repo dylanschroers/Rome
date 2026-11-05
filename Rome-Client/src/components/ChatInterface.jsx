@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import '../styles/ChatInterface.css'
 
-export default function ChatInterface({ subject, onBack }) {
+export default function ChatInterface({ subject, onBack, backLabel }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -66,7 +66,7 @@ export default function ChatInterface({ subject, onBack }) {
       console.error('Error:', error)
       const errorMessage = {
         id: messages.length + 2,
-        text: 'Sorry, I encountered an error. Please make sure the local LLM server is running on port 3001.',
+        text: "The tutor isn't available right now. Its local AI service isn't running.",
         sender: 'bot',
         timestamp: new Date(),
       }
@@ -88,7 +88,7 @@ export default function ChatInterface({ subject, onBack }) {
       <div className="chat-header">
         <h1>{subject}</h1>
         <button onClick={onBack} className="back-btn">
-          ← Back to School
+          ← {backLabel}
         </button>
       </div>
 

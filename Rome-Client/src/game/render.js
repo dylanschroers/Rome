@@ -245,3 +245,26 @@ export function drawFrame(ctx, scene) {
 
   if (solidOverlay) ctx.drawImage(solidOverlay, -camera.x, -camera.y)
 }
+
+export function drawMiniMap(target, map, ground, walker) {
+  const ctx = target.getContext('2d')
+  const scale = target.width / map.width
+
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(ground, 0, 0, target.width, target.height)
+
+  for (const building of map.buildings) {
+    if (building.open) ctx.fillStyle = '#f0bd71'
+    else if (building.id) ctx.fillStyle = '#8a7360'
+    else ctx.fillStyle = '#4c4a45'
+    ctx.fillRect(building.x * scale, building.y * scale, building.width * scale, building.height * scale)
+  }
+
+  ctx.fillStyle = '#fff3d8'
+  ctx.strokeStyle = '#2a1b11'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc((walker.x + 0.5) * scale, (walker.y + 0.5) * scale, Math.max(4, scale * 0.9), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+}

@@ -7,7 +7,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: /^http:\/\/localhost:\d+$/,
     methods: ['GET', 'POST']
   }
 });
@@ -43,7 +43,7 @@ app.post('/api/chat', async (req, res) => {
     res.json({ response });
   } catch (error) {
     console.error('Chat error:', error);
-    res.status(500).json({ error: 'Failed to process chat request' });
+    res.status(503).json({ error: 'tutor-unavailable' });
   }
 });
 
@@ -79,7 +79,7 @@ async function callLocalLLM(subject, message, history) {
     return data.response.trim();
   } catch (error) {
     console.error('LLM error:', error);
-    return `I encountered an error connecting to the learning service. Please ensure Ollama is running on http://localhost:11434. Error: ${error.message}`;
+    throw error;
   }
 }
 
