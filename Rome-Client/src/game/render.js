@@ -6,6 +6,7 @@ const COLORS = {
   grass: ['#3b5a34', '#375531', '#3f5f38'],
   cobble: ['#8a7a66', '#7d6e5c'],
   path: ['#75664f', '#6e604a'],
+  stairs: ['#8f8678', '#5f584f'],
   treeBase: '#1e3323',
   tree: ['#28472d', '#2d4f33'],
   treeLight: '#35603b',
@@ -36,6 +37,13 @@ function drawTile(ctx, tile, x, y) {
     case TILE.PATH:
       ctx.fillStyle = COLORS.path[pattern(x, y, 2)]
       ctx.fillRect(left, top, TILE_SIZE, TILE_SIZE)
+      break
+    case TILE.STAIRS:
+      ctx.fillStyle = COLORS.stairs[0]
+      ctx.fillRect(left, top, TILE_SIZE, TILE_SIZE)
+      ctx.fillStyle = COLORS.stairs[1]
+      ctx.fillRect(left, top + 6, TILE_SIZE, 2)
+      ctx.fillRect(left, top + 14, TILE_SIZE, 2)
       break
     case TILE.TREE:
       ctx.fillStyle = COLORS.treeBase
@@ -84,9 +92,8 @@ export function buildGroundCanvas(map) {
     }
   }
 
-  const forum = map.districts.find((item) => item.id === 'forum')
   ctx.fillStyle = COLORS.wellWater
-  ctx.fillRect((forum.x - 0.5) * TILE_SIZE, (forum.y - 0.5) * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE * 2)
+  ctx.fillRect((map.well.x - 0.5) * TILE_SIZE, (map.well.y - 0.5) * TILE_SIZE, TILE_SIZE * 2, TILE_SIZE * 2)
 
   return canvas
 }
@@ -108,7 +115,65 @@ export function buildSolidCanvas(map) {
   return canvas
 }
 
+const LANDMARK_COLORS = {
+  castle: { wall: '#6f6b74', top: '#4e4a55', trim: '#8a8590' },
+  garden: { wall: '#2f5a2c', top: '#3f7a39', trim: '#c98fa8' },
+  colosseum: { wall: '#a38b6a', top: '#7d6a50', trim: '#c4ab86' },
+}
+
+function drawDoor(ctx, building, camera, left, wallTop, width, height) {
+  const { door } = building
+  ctx.fillStyle = '#2c1d13'
+  if (door.side === 'bottom') {
+    ctx.fillRect(door.x * TILE_SIZE - camera.x + 2, wallTop + height - 16, 12, 16)
+  } else if (door.side === 'top') {
+    ctx.fillRect(door.x * TILE_SIZE - camera.x + 2, wallTop, 12, 8)
+  } else if (door.side === 'left') {
+    ctx.fillRect(left, door.y * TILE_SIZE - camera.y + 1, 4, 14)
+  } else {
+    ctx.fillRect(left + width - 4, door.y * TILE_SIZE - camera.y + 1, 4, 14)
+  }
+}
+
+function drawLandmark(ctx, building, camera) {
+  const left = building.x * TILE_SIZE - camera.x
+  const top = building.y * TILE_SIZE - camera.y
+  const width = building.width * TILE_SIZE
+  const height = building.height * TILE_SIZE
+  const colors = LANDMARK_COLORS[building.style]
+
+  ctx.fillStyle = 'rgba(10, 10, 15, 0.3)'
+  ctx.fillRect(left - 1, top + height, width + 2, 4)
+  ctx.fillStyle = colors.wall
+  ctx.fillRect(left, top, width, height)
+  ctx.fillStyle = colors.top
+  ctx.fillRect(left + 6, top + 6, width - 12, height - 12)
+  ctx.fillStyle = colors.trim
+
+  if (building.style === 'castle') {
+    for (let x = left; x < left + width; x += 16) ctx.fillRect(x, top - 6, 9, 8)
+    ctx.fillRect(left + 4, top + 4, 22, 22)
+    ctx.fillRect(left + width - 26, top + 4, 22, 22)
+  } else if (building.style === 'garden') {
+    for (let y = top + 14; y < top + height - 8; y += 18) {
+      for (let x = left + 14; x < left + width - 8; x += 22) ctx.fillRect(x, y, 4, 4)
+    }
+  } else {
+    ctx.fillStyle = '#c4ab86'
+    ctx.fillRect(left + 20, top + 20, width - 40, height - 40)
+    ctx.fillStyle = colors.top
+    for (let x = left + 4; x < left + width - 8; x += 14) ctx.fillRect(x, top + height - 10, 6, 8)
+  }
+
+  drawDoor(ctx, building, camera, left, top, width, height)
+}
+
 function drawBuilding(ctx, building, camera) {
+  if (building.style !== 'house') {
+    drawLandmark(ctx, building, camera)
+    return
+  }
+
   const left = building.x * TILE_SIZE - camera.x
   const wallTop = building.y * TILE_SIZE - camera.y
   const width = building.width * TILE_SIZE
@@ -142,17 +207,7 @@ function drawBuilding(ctx, building, camera) {
     ctx.fillRect(left + width - 18, wallTop + 22, 10, 12)
   }
 
-  const { door } = building
-  ctx.fillStyle = '#2c1d13'
-  if (door.side === 'bottom') {
-    ctx.fillRect(door.x * TILE_SIZE - camera.x + 2, wallTop + height - 16, 12, 16)
-  } else if (door.side === 'top') {
-    ctx.fillRect(door.x * TILE_SIZE - camera.x + 2, wallTop, 12, 8)
-  } else if (door.side === 'left') {
-    ctx.fillRect(left, door.y * TILE_SIZE - camera.y + 1, 4, 14)
-  } else {
-    ctx.fillRect(left + width - 4, door.y * TILE_SIZE - camera.y + 1, 4, 14)
-  }
+  drawDoor(ctx, building, camera, left, wallTop, width, height)
 }
 
 function drawWalker(ctx, walker, camera) {

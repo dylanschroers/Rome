@@ -10,18 +10,17 @@ const TICK = 1000 / 60
 
 test('every named place has a unique id, and empty plots have none', () => {
   const places = listPlaces(map)
-  assert.equal(places.length, 10)
+  assert.equal(places.length, 9)
   assert.equal(new Set(places.map((place) => place.id)).size, places.length)
   assert.ok(map.buildings.filter((item) => item.name === 'Empty plot').every((item) => item.id === null))
   assert.equal(map.buildings.length, 17)
 })
 
-test('only the three working places have somewhere to go', () => {
+test('only the working places have somewhere to go', () => {
   const open = listPlaces(map).filter((place) => place.open)
   assert.deepEqual(open.map((place) => [place.id, place.path]), [
     ['school', '/school'],
-    ['message-board', '/messages'],
-    ['language-stall', '/school/languages'],
+    ['tavern', '/messages'],
   ])
   assert.ok(listPlaces(map).filter((place) => !place.open).every((place) => place.path === null))
 })
@@ -64,10 +63,10 @@ test('being near an empty plot or out on the road finds nothing', () => {
 })
 
 test('a tile on a building or its roof finds that place', () => {
-  const stall = findPlace(map, 'language-stall')
-  assert.equal(placeUnderTile(map, stall.x + 1, stall.y + 1), stall)
-  assert.equal(placeUnderTile(map, stall.x + 1, stall.y - 2), stall)
-  assert.equal(placeUnderTile(map, stall.x + 1, stall.y - 3), null)
+  const school = findPlace(map, 'school')
+  assert.equal(placeUnderTile(map, school.x + 1, school.y + 1), school)
+  assert.equal(placeUnderTile(map, school.x + 1, school.y - 2), school)
+  assert.equal(placeUnderTile(map, school.x + 1, school.y - 3), null)
   const plot = map.buildings.find((item) => item.name === 'Empty plot')
   assert.equal(placeUnderTile(map, plot.x + 1, plot.y + 1), null)
 })
@@ -83,14 +82,14 @@ test('a place address links back to its door', () => {
 })
 
 test('running covers twice the ground of walking', () => {
-  const walker = createWalker(45, 34, 'up')
-  const runner = createWalker(45, 34, 'up')
+  const walker = createWalker(map.spawn.x, map.spawn.y, 'up')
+  const runner = createWalker(map.spawn.x, map.spawn.y, 'up')
   for (let tick = 0; tick < 30; tick += 1) {
     stepWalker(walker, map, 'up', TICK)
     stepWalker(runner, map, 'up', TICK, true)
   }
-  assert.ok(Math.abs((34 - walker.y) - WALK_TILES_PER_SECOND / 2) <= 1)
-  assert.ok(Math.abs((34 - runner.y) - WALK_TILES_PER_SECOND) <= 1)
+  assert.ok(Math.abs((map.spawn.y - walker.y) - WALK_TILES_PER_SECOND / 2) <= 1)
+  assert.ok(Math.abs((map.spawn.y - runner.y) - WALK_TILES_PER_SECOND) <= 1)
 })
 
 test('running never carries the walker through a wall', () => {
@@ -115,8 +114,8 @@ test('a long route can run itself, and stops running when it ends', () => {
 })
 
 test('a held key stops a route from running itself', () => {
-  const walker = createWalker(45, 34, 'up')
-  walker.route = findRoute(map, { x: 45, y: 34 }, { x: 45, y: 26 })
+  const walker = createWalker(map.spawn.x, map.spawn.y, 'up')
+  walker.route = findRoute(map, map.spawn, { x: map.spawn.x, y: map.spawn.y - 8 })
   walker.autoRun = true
   stepWalker(walker, map, 'up', TICK)
   assert.equal(walker.autoRun, false)
@@ -124,14 +123,28 @@ test('a held key stops a route from running itself', () => {
 })
 
 test('placing a walker clears anything it was doing', () => {
-  const walker = createWalker(45, 34, 'up')
-  walker.route = findRoute(map, { x: 45, y: 34 }, { x: 45, y: 26 })
+  const walker = createWalker(map.spawn.x, map.spawn.y, 'up')
+  walker.route = findRoute(map, map.spawn, { x: map.spawn.x, y: map.spawn.y - 8 })
   walker.autoRun = true
   stepWalker(walker, map, null, TICK)
-  placeWalker(walker, 18, 17, 'down')
-  assert.deepEqual([walker.x, walker.y, walker.toX, walker.toY], [18, 17, 18, 17])
+  placeWalker(walker, map.well.x - 3, map.well.y, 'down')
+  assert.deepEqual([walker.x, walker.y, walker.toX, walker.toY], [map.well.x - 3, map.well.y, map.well.x - 3, map.well.y])
   assert.equal(walker.facing, 'down')
   assert.equal(walker.moving, false)
   assert.equal(walker.route.length, 0)
   assert.equal(walker.autoRun, false)
+})
+
+test('landmarks are closed placeholders with their own names', () => {
+  for (const id of ['castle', 'garden', 'colosseum']) {
+    const place = findPlace(map, id)
+    assert.ok(place, `${id} is missing`)
+    assert.equal(place.open, false)
+    assert.equal(place.district, 'landmarks')
+  }
+})
+
+test('every place belongs to a group shown in the Places panel', () => {
+  const groups = new Set(map.groups.map((group) => group.id))
+  assert.ok(listPlaces(map).every((place) => groups.has(place.district)))
 })

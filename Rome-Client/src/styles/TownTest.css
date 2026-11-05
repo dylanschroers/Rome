@@ -295,7 +295,9 @@
 .places-map {
   display: block;
   width: 100%;
+  max-width: 300px;
   height: auto;
+  margin-inline: auto;
   margin-bottom: 12px;
   border: 1px solid #1e1712;
 }

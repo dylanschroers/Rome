@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 const FOCUSABLE = 'button:not([disabled])'
+const MAP_PIXELS = 416
 
 export default function PlacesPanel({ map, drawMiniMap, onGo, onEnter, onClose }) {
   const panelRef = useRef(null)
@@ -54,13 +55,19 @@ export default function PlacesPanel({ map, drawMiniMap, onGo, onEnter, onClose }
           <button type="button" className="places-close" onClick={onClose}>Close</button>
         </header>
 
-        <canvas ref={canvasRef} className="places-map" width={480} height={200} aria-hidden="true" />
+        <canvas
+          ref={canvasRef}
+          className="places-map"
+          width={MAP_PIXELS}
+          height={Math.round((MAP_PIXELS * map.height) / map.width)}
+          aria-hidden="true"
+        />
 
-        {map.districts.map((district) => (
-          <section key={district.id} className="places-district" aria-label={district.name}>
-            <h3>{district.name}</h3>
+        {map.groups.map((group) => (
+          <section key={group.id} className="places-district" aria-label={group.name}>
+            <h3>{group.name}</h3>
             <ul>
-              {map.buildings.filter((item) => item.id && item.district === district.id).map((place) => (
+              {map.buildings.filter((item) => item.id && item.district === group.id).map((place) => (
                 <li key={place.id} className={place.open ? 'is-open' : ''}>
                   <span className="places-name">
                     {place.name}
