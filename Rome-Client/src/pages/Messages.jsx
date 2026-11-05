@@ -69,7 +69,7 @@ export default function Messages() {
           <h1>When In Rome</h1>
           <p className="user-id">ID: {userId}</p>
         </div>
-        <button onClick={() => navigate('/')} className="back-btn">← Back</button>
+        <button onClick={() => navigate('/town')} className="back-btn">← Back to town</button>
       </header>
 
       <main className="main-content">

@@ -37,122 +37,10 @@
   animation: pageTransitionInScale 0.5s ease-out;
 }
 
-/* Welcome Page */
-.welcome-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  animation: pageTransitionIn 0.5s ease-out;
-}
-
-.welcome-content {
-  text-align: center;
-  color: white;
-  max-width: 600px;
-}
-
-.welcome-content h1 {
-  font-size: 3.5rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
 .subtitle {
   font-size: 1.3rem;
   opacity: 0.9;
   margin-bottom: 40px;
-}
-
-.welcome-description {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 30px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  margin-bottom: 40px;
-}
-
-.welcome-description p {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-  opacity: 0.95;
-}
-
-.features {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: left;
-  margin: 20px 0;
-}
-
-.features li {
-  font-size: 1rem;
-  padding: 10px 0 10px 30px;
-  position: relative;
-  opacity: 0.9;
-}
-
-.features li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: #4ade80;
-  font-weight: bold;
-}
-
-.enter-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 16px 48px;
-  font-size: 1.1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-}
-
-.enter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6);
-}
-
-.enter-btn:active {
-  transform: translateY(0);
-}
-
-.button-group {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.button-group .enter-btn {
-  flex: 1;
-  min-width: 150px;
-}
-
-.town-btn {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 8px 32px rgba(245, 87, 108, 0.4);
-}
-
-.town-btn:hover {
-  box-shadow: 0 12px 40px rgba(245, 87, 108, 0.6);
-}
-
-.combined-btn {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  box-shadow: 0 8px 32px rgba(79, 172, 254, 0.4);
-}
-
-.combined-btn:hover {
-  box-shadow: 0 12px 40px rgba(79, 172, 254, 0.6);
 }
 
 /* Messages Page */
@@ -365,10 +253,6 @@
 }
 
 @media (max-width: 768px) {
-  .welcome-content h1 {
-    font-size: 2.5rem;
-  }
-
   .header {
     flex-direction: column;
     gap: 15px;
@@ -395,11 +279,4 @@
     padding: 15px;
   }
 
-  .button-group {
-    flex-direction: column;
-  }
-
-  .button-group .enter-btn {
-    width: 100%;
-  }
 }

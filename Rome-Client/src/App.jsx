@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Welcome from './pages/Welcome'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import Messages from './pages/Messages'
-import Town from './pages/Town'
+import City from './pages/City'
 import TownMessages from './pages/TownMessages'
 import School from './pages/School'
 import LanguagesChat from './pages/LanguagesChat'
@@ -12,9 +11,12 @@ function App() {
     <BrowserRouter>
       <div className="app-container">
         <Routes>
-          <Route path="/" element={<Welcome />} />
+          <Route element={<City />}>
+            <Route path="/" element={null} />
+            <Route path="/city/:district" element={null} />
+          </Route>
+          <Route path="/town" element={<Navigate to="/city/forum" replace />} />
           <Route path="/messages" element={<Messages />} />
-          <Route path="/town" element={<Town />} />
           <Route path="/town-messages" element={<TownMessages />} />
           <Route path="/school" element={<School />} />
           <Route path="/school/languages" element={<LanguagesChat />} />

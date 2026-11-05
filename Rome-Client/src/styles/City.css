@@ -1,0 +1,329 @@
+.city {
+  --city-width: max(100vw, 177.78vh);
+  --city-height: max(100vh, 56.25vw);
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  overflow: clip;
+  background: #131726;
+  color: #f1e5cc;
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+}
+
+/* ------------------------------------------------------------ Scene layers */
+
+.city-scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.is-ready .city-scene {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.city-scene img {
+  display: block;
+  user-select: none;
+}
+
+/* The town and the gate share one box, so they line up at every screen shape. */
+.city-town {
+  position: absolute;
+  top: calc(50vh - var(--city-height) / 2);
+  left: calc(50vw - var(--city-width) / 2);
+  width: var(--city-width);
+  height: var(--city-height);
+  transform: scale(0.72);
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.city-frame {
+  position: absolute;
+  top: calc(50vh - var(--city-height) / 2);
+  left: calc(50vw - var(--city-width) / 2);
+  width: var(--city-width);
+  height: var(--city-height);
+  transform-origin: 50% 59.4%;
+  will-change: transform;
+}
+
+.city-wall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.city-doors {
+  position: absolute;
+  top: 30%;
+  left: 40%;
+  width: 20%;
+  height: 58.89%;
+  perspective: calc(var(--city-width) * 0.75);
+  perspective-origin: 50% 55%;
+}
+
+/* An invisible arch over the doors, since the wall image sits on top of them. */
+.city-gate-target {
+  position: absolute;
+  top: 30%;
+  left: 40%;
+  width: 20%;
+  height: 58.89%;
+  border-radius: 50% 50% 0 0 / 30.19% 30.19% 0 0;
+  pointer-events: none;
+}
+
+.is-outside.is-ready .city-gate-target {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.city-door {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  will-change: transform;
+}
+
+.city-door-left {
+  left: 0;
+  transform-origin: left center;
+}
+
+.city-door-right {
+  right: 0;
+  transform-origin: right center;
+}
+
+.city-flame {
+  position: absolute;
+  top: 37.556%;
+  width: 9.375%;
+  height: 18.889%;
+  transform-origin: 50% 76.5%;
+  pointer-events: none;
+  will-change: transform;
+  animation: city-flicker 0.9s ease-in-out infinite alternate;
+}
+
+.city-flame-left {
+  left: 30.3125%;
+}
+
+.city-flame-right {
+  left: 60.3125%;
+  animation-duration: 0.73s;
+  animation-delay: -0.3s;
+}
+
+.is-entering .city-flame,
+.is-returning .city-flame,
+.is-inside .city-flame {
+  animation-play-state: paused;
+}
+
+/* --------------------------------------------- Standing inside the gate */
+
+.is-entering .city-town,
+.is-inside .city-town {
+  transform: scale(1);
+}
+
+/* At this scale the archway is wider than the screen, so the wall has left the view. */
+.is-entering .city-frame,
+.is-inside .city-frame {
+  transform: scale(8.5);
+}
+
+.is-inside .city-frame,
+.is-inside .city-town {
+  visibility: hidden;
+}
+
+.is-entering .city-door-left,
+.is-inside .city-door-left {
+  transform: rotateY(83deg);
+}
+
+.is-entering .city-door-right,
+.is-inside .city-door-right {
+  transform: rotateY(-83deg);
+}
+
+/* ------------------------------------------------------------- Walking in */
+
+.is-entering .city-door {
+  transition: transform 0.9s cubic-bezier(0.45, 0.05, 0.35, 1);
+}
+
+.is-entering .city-frame {
+  transition: transform 1.4s cubic-bezier(0.55, 0.05, 0.8, 0.6) 0.4s;
+}
+
+/* The town reaches full size before the archway widens past the edges of the screen. */
+.is-entering .city-town {
+  transition: transform 1.15s cubic-bezier(0.4, 0, 0.5, 1) 0.15s;
+}
+
+.is-entering .gate-ui {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* ------------------------------------------------------------ Walking out */
+
+.is-returning .city-frame {
+  transition: transform 1.35s cubic-bezier(0.2, 0.4, 0.45, 0.95);
+}
+
+.is-returning .city-town {
+  transition: transform 1.15s cubic-bezier(0.5, 0, 0.6, 1) 0.5s;
+}
+
+.is-returning .city-door {
+  transition: transform 0.85s cubic-bezier(0.55, 0.05, 0.45, 1) 0.95s;
+}
+
+.is-returning .gate-ui {
+  pointer-events: none;
+  animation: city-fade-in 0.3s ease 1.5s both;
+}
+
+/* -------------------------------------------- Lighter mode for weak devices */
+
+.is-lite .city-town,
+.is-lite.is-entering .city-town,
+.is-lite.is-inside .city-town,
+.is-lite.is-returning .city-town {
+  transform: none;
+  transition: none;
+}
+
+.is-lite .city-frame {
+  will-change: opacity;
+}
+
+.is-lite.is-entering .city-frame,
+.is-lite.is-inside .city-frame {
+  transform: none;
+  opacity: 0;
+}
+
+.is-lite.is-entering .city-frame {
+  transition: opacity 0.45s linear 0.55s;
+}
+
+.is-lite.is-entering .city-door {
+  transition: transform 0.6s cubic-bezier(0.45, 0.05, 0.35, 1);
+}
+
+.is-lite.is-returning .city-frame {
+  transition: opacity 0.45s linear;
+}
+
+.is-lite.is-returning .city-door {
+  transition: transform 0.55s cubic-bezier(0.55, 0.05, 0.45, 1) 0.45s;
+}
+
+.is-lite.is-returning .gate-ui {
+  animation-delay: 0.75s;
+}
+
+/* ---------------------------------------------------------------- Gate page */
+
+.gate-title {
+  position: absolute;
+  top: clamp(14px, 3.5vh, 38px);
+  left: 0;
+  width: 100%;
+  padding: 0 16px;
+  text-align: center;
+  text-shadow: 0 2px 16px #07070c;
+  pointer-events: none;
+}
+
+.gate-title h1 {
+  font-size: clamp(2.25rem, 6vw, 4.25rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.05;
+  text-indent: 0.16em;
+}
+
+.gate-enter {
+  position: absolute;
+  bottom: clamp(20px, 5vh, 46px);
+  left: 50%;
+  min-width: 205px;
+  padding: 13px 26px;
+  transform: translateX(-50%);
+  border: 2px solid #1e1712;
+  border-radius: 3px;
+  outline: 1px solid #927652;
+  outline-offset: -5px;
+  background: repeating-linear-gradient(90deg, #5a3b24 0 38px, #4e321e 38px 40px, #583925 40px 80px);
+  color: #f5e8cc;
+  font-family: inherit;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(4 4 8 / 58%);
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease;
+}
+
+.gate-enter:disabled {
+  cursor: default;
+}
+
+.gate-enter:not(:disabled):hover {
+  filter: brightness(1.18);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.gate-enter:focus-visible {
+  outline: 3px solid #f0bd71;
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------- Animations */
+
+@keyframes city-flicker {
+  from {
+    transform: scale(1, 0.95) rotate(-2deg);
+  }
+  to {
+    transform: scale(0.95, 1.07) rotate(2.5deg);
+  }
+}
+
+@keyframes city-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-flame {
+    animation: none;
+  }
+
+  .is-ready .city-scene {
+    transition: none;
+  }
+
+  .gate-enter {
+    transition: none;
+  }
+}
