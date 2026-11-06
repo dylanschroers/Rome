@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { createTavern } from './tavern.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,20 +19,11 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage
-const messages = []; // { id, userId, name, content, timestamp }
-const MAX_MESSAGES = 200;
-const MAX_MESSAGE_LENGTH = 500;
-const MAX_NAME_LENGTH = 24;
-let nextMessageId = 1;
-
-const cleanText = (value, limit) => (
-  typeof value === 'string' ? value.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, limit) : ''
-);
+const tavern = createTavern();
 
 // REST API endpoints
 app.get('/api/messages', (req, res) => {
-  res.json(messages);
+  res.json(tavern.roomHistory());
 });
 
 // LLM Chat endpoint
@@ -92,36 +84,61 @@ async function callLocalLLM(subject, message, history) {
 }
 
 // WebSocket (Socket.io) events
+const reply = (ack, result) => {
+  if (typeof ack === 'function') ack(result);
+};
+const tableRoom = (tableId) => `table:${tableId}`;
+const shareTavern = () => io.to('tavern').emit('tavern:state', tavern.snapshot());
+
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  socket.emit('messages:init', tavern.roomHistory());
 
-  // Send all existing messages to the new client
-  socket.emit('messages:init', messages);
-
-  // Broadcast new message to all connected clients
-  socket.on('message:post', (data) => {
-    const content = cleanText(data?.content, MAX_MESSAGE_LENGTH);
-    const userId = cleanText(data?.userId, 64);
-    if (!content || !userId) return;
-
-    const message = {
-      id: nextMessageId++,
-      userId,
-      name: cleanText(data?.name, MAX_NAME_LENGTH).replace(/\s+/g, ' ') || 'Traveler',
-      content,
-      timestamp: new Date().toISOString()
-    };
-
-    messages.push(message);
-    if (messages.length > MAX_MESSAGES) messages.splice(0, messages.length - MAX_MESSAGES);
-
-    // Broadcast to all clients
-    io.emit('message:new', message);
+  socket.on('tavern:join', (data, ack) => {
+    const result = tavern.join(socket.id, data);
+    reply(ack, result);
+    if (!result.ok) return;
+    socket.join('tavern');
+    shareTavern();
   });
 
-  // User disconnects
+  socket.on('tavern:rename', (name, ack) => {
+    const result = tavern.rename(socket.id, name);
+    reply(ack, result);
+    if (result.ok) shareTavern();
+  });
+
+  socket.on('message:post', (data, ack) => {
+    const result = tavern.sayInRoom(socket.id, data);
+    reply(ack, result.ok ? { ok: true } : result);
+    if (result.ok) io.to('tavern').emit('message:new', result.message);
+  });
+
+  socket.on('table:sit', (data, ack) => {
+    const result = tavern.sit(socket.id, data?.tableId, data?.seat);
+    reply(ack, result);
+    if (!result.ok || !result.moved) return;
+    if (result.left) socket.leave(tableRoom(result.left));
+    socket.join(tableRoom(result.tableId));
+    socket.emit('table:history', { tableId: result.tableId, messages: tavern.tableHistory(result.tableId) });
+    shareTavern();
+  });
+
+  socket.on('table:leave', (ack) => {
+    const result = tavern.leaveTable(socket.id);
+    reply(ack, result);
+    if (!result.ok) return;
+    socket.leave(tableRoom(result.tableId));
+    shareTavern();
+  });
+
+  socket.on('table:say', (data, ack) => {
+    const result = tavern.sayAtTable(socket.id, data);
+    reply(ack, result.ok ? { ok: true } : result);
+    if (result.ok) io.to(tableRoom(result.tableId)).emit('table:message', { tableId: result.tableId, message: result.message });
+  });
+
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
+    if (tavern.leave(socket.id).wasHere) shareTavern();
   });
 });
 

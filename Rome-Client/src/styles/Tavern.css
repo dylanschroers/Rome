@@ -114,15 +114,289 @@
 
 /* -------------------------------------------------------------- The room */
 
+.tavern [hidden] {
+  display: none !important;
+}
+
 .tavern-room {
   position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
+  gap: 12px;
   width: min(760px, 100%);
   min-height: 0;
   margin: 0 auto;
   padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+}
+
+.tavern.is-wide .tavern-room {
+  display: grid;
+  grid-template-columns: minmax(330px, 0.9fr) minmax(0, 1.2fr);
+  gap: 22px;
+  width: min(1180px, 100%);
+}
+
+.tavern-chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------------ Tabs */
+
+.tavern-tabs {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.tavern.is-wide .tavern-tabs {
+  margin-bottom: 10px;
+}
+
+.tavern-tab {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 9px 10px;
+  overflow: hidden;
+  border: 2px solid var(--tavern-wood-dark);
+  border-radius: 4px;
+  background: rgb(36 23 14 / 80%);
+  color: #cdb994;
+  font: inherit;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tavern-tab[aria-selected='true'] {
+  border-color: #6b4a2f;
+  background: #4a311f;
+  color: var(--tavern-ink);
+  box-shadow: inset 0 -3px 0 var(--tavern-gold);
+}
+
+.tavern-tab:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.tavern-tab:not(:disabled, [aria-selected='true']):hover {
+  color: var(--tavern-ink);
+}
+
+.tavern-hidden-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tavern-unread {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tavern-gold);
+  box-shadow: 0 0 6px var(--tavern-gold);
+}
+
+/* ---------------------------------------------------------------- Tables */
+
+.tavern-tables {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+  border: 3px solid var(--tavern-wood-dark);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0%) 0 62px, rgb(0 0 0 / 20%) 62px 64px),
+    linear-gradient(180deg, #4a3020, #3a2618);
+  box-shadow: inset 0 6px 18px rgb(0 0 0 / 40%);
+}
+
+.tavern-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+  gap: 14px 10px;
+  list-style: none;
+}
+
+.tavern-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.tavern-table.is-mine {
+  background: rgb(240 189 113 / 10%);
+  box-shadow: inset 0 0 0 1px rgb(240 189 113 / 35%);
+}
+
+.tavern-table-spot {
+  position: relative;
+  width: 118px;
+  height: 118px;
+}
+
+.tavern-tabletop {
+  position: absolute;
+  inset: 27px;
+  border: 3px solid #2a1a0f;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #8a5d3b, #6b4429 60%, #573620);
+  box-shadow:
+    inset 0 -4px 8px rgb(0 0 0 / 35%),
+    0 5px 10px rgb(0 0 0 / 45%);
+  color: #f3e3c3;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.tavern-tabletop:disabled {
+  cursor: default;
+}
+
+.tavern-tabletop:not(:disabled):hover {
+  filter: brightness(1.15);
+}
+
+.tavern-seat {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px dashed #9b7a55;
+  border-radius: 50%;
+  background: rgb(30 19 11 / 70%);
+  color: var(--tavern-text);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.tavern-seat.is-top {
+  top: 0;
+  left: 44px;
+}
+
+.tavern-seat.is-right {
+  top: 44px;
+  right: 0;
+}
+
+.tavern-seat.is-bottom {
+  bottom: 0;
+  left: 44px;
+}
+
+.tavern-seat.is-left {
+  top: 44px;
+  left: 0;
+}
+
+button.tavern-seat:not(:disabled):hover {
+  border-color: var(--tavern-gold);
+  background: rgb(240 189 113 / 22%);
+}
+
+button.tavern-seat:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.tavern-seat.is-taken {
+  border: 2px solid #3a2618;
+  background: var(--tavern-parchment);
+  cursor: default;
+}
+
+.tavern-seat.is-mine {
+  border-color: var(--tavern-gold);
+  background: var(--tavern-parchment-own);
+  box-shadow: 0 0 10px rgb(240 189 113 / 70%);
+}
+
+.tavern-table-name {
+  font-size: 0.95rem;
+}
+
+.tavern-table-people {
+  max-width: 100%;
+  overflow: hidden;
+  color: #c9b48f;
+  font-size: 0.78rem;
+  font-style: italic;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tavern-leave {
+  margin-top: 6px;
+  padding: 4px 12px;
+  border: 1px solid #927652;
+  border-radius: 3px;
+  background: #3a2618;
+  color: var(--tavern-ink);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.tavern-leave:hover {
+  background: #4a311f;
+}
+
+.tavern-bar {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgb(107 74 47 / 70%);
+  color: #d8c6a2;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.tavern-bar-label {
+  margin-right: 8px;
+  color: var(--tavern-gold);
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+}
+
+.tavern-notice {
+  min-height: 0;
+  color: var(--tavern-gold);
+  font-size: 0.88rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.tavern-notice:not(:empty) {
+  padding-top: 6px;
 }
 
 .tavern-board {
@@ -305,7 +579,11 @@
 
 .tavern-back:focus-visible,
 .tavern-name-button:focus-visible,
-.tavern-send:focus-visible {
+.tavern-send:focus-visible,
+.tavern-tab:focus-visible,
+.tavern-tabletop:focus-visible,
+.tavern-seat:focus-visible,
+.tavern-leave:focus-visible {
   outline: 3px solid var(--tavern-gold);
   outline-offset: 2px;
 }
@@ -339,7 +617,9 @@
   }
 
   .tavern-back,
-  .tavern-send {
+  .tavern-send,
+  .tavern-tabletop,
+  .tavern-seat {
     transition: none;
   }
 }

@@ -1,20 +1,33 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { io } from 'socket.io-client'
+import ChatLog from '../tavern/ChatLog'
+import TablesPanel from '../tavern/TablesPanel'
 import { MAX_NAME, cleanName, readGuest, saveGuest } from '../tavern/guest'
-import { MAX_MESSAGE, groupMessages } from '../tavern/messages'
+import { MAX_MESSAGE } from '../tavern/messages'
+import { findSeat, refusalText } from '../tavern/room'
+import useTavern from '../tavern/useTavern'
 import { townAddress } from '../world/places'
 import '../styles/Tavern.css'
 
-const SERVER = 'http://localhost:3001'
-const STICK_TO_BOTTOM_PX = 80
-const STATUS_TEXT = {
-  connecting: 'Finding a seat…',
-  online: 'In the common room',
-  offline: "Can't reach the tavern right now",
+const WIDE_SCREEN = '(min-width: 900px)'
+const NOTICE_MS = 4000
+
+function useWideScreen() {
+  const [wide, setWide] = useState(() => window.matchMedia(WIDE_SCREEN).matches)
+  useEffect(() => {
+    const query = window.matchMedia(WIDE_SCREEN)
+    const onChange = () => setWide(query.matches)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [])
+  return wide
 }
 
-const timeOf = (timestamp) => new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+function statusText(status, count) {
+  if (status === 'online') return count > 1 ? `In the common room · ${count} here` : 'In the common room'
+  if (status === 'offline') return "Can't reach the tavern right now"
+  return 'Finding a seat…'
+}
 
 function NameTag({ guest, onRename }) {
   const [editing, setEditing] = useState(false)
@@ -68,38 +81,76 @@ function NameTag({ guest, onRename }) {
   )
 }
 
+function Tab({ id, label, selected, disabled, unread, onSelect }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      id={`tab-${id}`}
+      className={`tavern-tab${unread ? ' has-unread' : ''}`}
+      aria-selected={selected}
+      aria-controls={`tavern-${id}`}
+      disabled={disabled}
+      onClick={() => onSelect(id)}
+    >
+      {label}
+      {unread && (
+        <>
+          <span className="tavern-unread" aria-hidden="true" />
+          <span className="tavern-hidden-text"> · new messages</span>
+        </>
+      )}
+    </button>
+  )
+}
+
 export default function Tavern() {
   const navigate = useNavigate()
+  const wide = useWideScreen()
   const [guest, setGuest] = useState(() => readGuest())
-  const [messages, setMessages] = useState([])
+  const { status, me, roomMessages, roomHistory, tavern, table, say, sayAtTable, sit, leaveTable } = useTavern(guest)
+  const [view, setView] = useState(() => (window.matchMedia(WIDE_SCREEN).matches ? 'room' : 'tables'))
   const [draft, setDraft] = useState('')
-  const [status, setStatus] = useState('connecting')
-  const socketRef = useRef(null)
-  const boardRef = useRef(null)
-  const stickRef = useRef(true)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+  const [seen, setSeen] = useState({ room: 0, table: 0 })
+  const noticeTimer = useRef(null)
+  const inputRef = useRef(null)
+
+  const seat = findSeat(tavern.tables, me)
+  const tableMessages = seat && table.id === seat.table.id ? table.messages : []
+  const chat = view === 'table' && seat ? 'table' : 'room'
+  const showTables = wide || view === 'tables'
+  const showChat = wide || view !== 'tables'
+
+  const seatedAt = seat?.table.id ?? null
+  const lastSeat = useRef(seatedAt)
+  useEffect(() => {
+    if (lastSeat.current && !seatedAt) setView((current) => (current === 'table' ? (wide ? 'room' : 'tables') : current))
+    lastSeat.current = seatedAt
+  }, [seatedAt, wide])
 
   useEffect(() => {
-    const socket = io(SERVER, { reconnectionDelay: 1000, reconnectionDelayMax: 8000 })
-    socketRef.current = socket
-    socket.on('connect', () => setStatus('online'))
-    socket.on('connect_error', () => setStatus('offline'))
-    socket.on('disconnect', () => setStatus('offline'))
-    socket.on('messages:init', (initial) => setMessages(Array.isArray(initial) ? initial : []))
-    socket.on('message:new', (message) => setMessages((previous) => [...previous, message]))
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [])
+    if (!showChat) return
+    setSeen((previous) => (chat === 'room'
+      ? { ...previous, room: roomMessages.length }
+      : { ...previous, table: tableMessages.length }))
+  }, [chat, roomMessages.length, showChat, tableMessages.length])
 
-  useLayoutEffect(() => {
-    const board = boardRef.current
-    if (board && stickRef.current) board.scrollTop = board.scrollHeight
-  }, [messages])
+  useEffect(() => {
+    setSeen((previous) => ({ ...previous, table: 0 }))
+  }, [seatedAt])
 
-  const onScroll = () => {
-    const board = boardRef.current
-    stickRef.current = board.scrollHeight - board.scrollTop - board.clientHeight < STICK_TO_BOTTOM_PX
+  useEffect(() => {
+    setSeen((previous) => ({ ...previous, room: Math.max(previous.room, roomHistory) }))
+  }, [roomHistory])
+
+  useEffect(() => () => clearTimeout(noticeTimer.current), [])
+
+  const tell = (text) => {
+    setNotice(text)
+    clearTimeout(noticeTimer.current)
+    noticeTimer.current = setTimeout(() => setNotice(''), NOTICE_MS)
   }
 
   const rename = (name) => {
@@ -108,19 +159,64 @@ export default function Tavern() {
     saveGuest(next)
   }
 
-  const send = (event) => {
+  const sitDown = async (tableId, seatIndex) => {
+    setBusy(true)
+    const result = await sit(tableId, seatIndex)
+    setBusy(false)
+    if (!result.ok) {
+      tell(refusalText(result.reason))
+      return
+    }
+    setView('table')
+  }
+
+  const standUp = async () => {
+    setBusy(true)
+    const result = await leaveTable()
+    setBusy(false)
+    if (!result.ok) tell(refusalText(result.reason))
+    setView(wide ? 'room' : 'tables')
+  }
+
+  const send = async (event) => {
     event.preventDefault()
     const content = draft.trim()
     if (!content || status !== 'online') return
-    socketRef.current.emit('message:post', { userId: guest.id, name: guest.name, content })
-    stickRef.current = true
     setDraft('')
+    const result = await (chat === 'table' ? sayAtTable(content) : say(content))
+    if (!result.ok) {
+      setDraft(content)
+      tell(refusalText(result.reason))
+    }
   }
 
-  const groups = groupMessages(messages)
+  const unread = {
+    room: chat !== 'room' || !showChat ? roomMessages.length > seen.room : false,
+    table: chat !== 'table' || !showChat ? tableMessages.length > seen.table : false,
+  }
+  const tabs = [
+    !wide && { id: 'tables', label: 'Tables' },
+    { id: 'room', label: wide ? 'Common room' : 'Room' },
+    { id: 'table', label: seat ? seat.table.name : 'Your table', disabled: !seat },
+  ].filter(Boolean)
+  const selectedTab = wide ? chat : view === 'tables' ? 'tables' : chat
+  const placeholder = chat === 'table' ? `Say something to ${seat.table.name}` : 'Say something to the room'
+  const tabList = (
+    <div className="tavern-tabs" role="tablist" aria-label="Tavern views">
+      {tabs.map((tab) => (
+        <Tab
+          key={tab.id}
+          {...tab}
+          selected={selectedTab === tab.id}
+          unread={unread[tab.id]}
+          onSelect={setView}
+        />
+      ))}
+    </div>
+  )
 
   return (
-    <div className="tavern">
+    <div className={`tavern${wide ? ' is-wide' : ''}`}>
       <div className="tavern-glow" aria-hidden="true" />
 
       <header className="tavern-top">
@@ -131,59 +227,67 @@ export default function Tavern() {
         </button>
         <div className="tavern-title">
           <h1>Tavern</h1>
-          <p className={`tavern-status is-${status}`} role="status">{STATUS_TEXT[status]}</p>
+          <p className={`tavern-status is-${status}`} role="status">{statusText(status, tavern.here.length)}</p>
         </div>
       </header>
 
-      <main className="tavern-room">
-        <section
-          ref={boardRef}
-          className="tavern-board"
-          role="log"
-          aria-live="polite"
-          aria-label="Common room chat"
-          tabIndex={0}
-          onScroll={onScroll}
-        >
-          {groups.length === 0 && (
-            <p className="tavern-empty">
-              {status === 'offline' ? 'The common room is closed for now.' : 'The room is quiet. Say something to start the talk.'}
-            </p>
-          )}
-          {groups.map((group) => {
-            const own = group.userId === guest.id
-            return (
-              <article key={group.key} className={`tavern-turn${own ? ' is-own' : ''}`}>
-                <header className="tavern-turn-head">
-                  <strong className="tavern-author">{own ? `${group.name} (you)` : group.name}</strong>
-                  <time className="tavern-time" dateTime={group.messages[0].timestamp}>{timeOf(group.messages[0].timestamp)}</time>
-                </header>
-                {group.messages.map((message) => (
-                  <p key={message.id ?? message.timestamp} className="tavern-line">{message.content}</p>
-                ))}
-              </article>
-            )
-          })}
-        </section>
+      <div className="tavern-room">
+        {!wide && tabList}
+        <TablesPanel
+          tavern={tavern}
+          me={me}
+          busy={busy || status !== 'online'}
+          hidden={!showTables}
+          onSit={sitDown}
+          onLeave={standUp}
+        />
 
-        <form className="tavern-composer" onSubmit={send}>
-          <NameTag key={guest.name} guest={guest} onRename={rename} />
-          <div className="tavern-say">
-            <input
-              className="tavern-input"
-              value={draft}
-              maxLength={MAX_MESSAGE}
-              placeholder="Say something to the room"
-              aria-label="Message"
-              autoComplete="off"
-              onChange={(event) => setDraft(event.target.value)}
-            />
-            <button type="submit" className="tavern-send" disabled={!draft.trim() || status !== 'online'}>
-              Send
-            </button>
-          </div>
-        </form>
-      </main>
+        <main className="tavern-chat" hidden={!showChat}>
+          {wide && tabList}
+
+          {showChat && (
+            <>
+              <ChatLog
+                id="tavern-room"
+                label="Common room chat"
+                messages={roomMessages}
+                ownId={guest.id}
+                hidden={chat !== 'room'}
+                emptyText={status === 'offline' ? 'The common room is closed for now.' : 'The room is quiet. Say something to start the talk.'}
+              />
+              <ChatLog
+                id="tavern-table"
+                label={seat ? `${seat.table.name} chat` : 'Table chat'}
+                messages={tableMessages}
+                ownId={guest.id}
+                hidden={chat !== 'table'}
+                emptyText={seat ? `You sat down at ${seat.table.name}. Say hello to the table.` : ''}
+              />
+
+              <form className="tavern-composer" onSubmit={send}>
+                <NameTag key={guest.name} guest={guest} onRename={rename} />
+                <div className="tavern-say">
+                  <input
+                    ref={inputRef}
+                    className="tavern-input"
+                    value={draft}
+                    maxLength={MAX_MESSAGE}
+                    placeholder={placeholder}
+                    aria-label={chat === 'table' ? 'Message to your table' : 'Message to the room'}
+                    autoComplete="off"
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                  <button type="submit" className="tavern-send" disabled={!draft.trim() || status !== 'online'}>
+                    Send
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          <p className="tavern-notice" role="status" aria-live="polite">{notice}</p>
+        </main>
+      </div>
     </div>
   )
 }
