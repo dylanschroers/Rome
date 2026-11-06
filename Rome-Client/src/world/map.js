@@ -215,6 +215,7 @@ export function generateTown() {
     groups: PLACE_GROUPS,
     areas,
     well,
+    corridors: CORRIDORS,
     gate: { x: road.x, y: WALL_TOP, width: road.width },
     spawn: { x: road.x + 1, y: WALL_TOP - 2, facing: 'up' },
   }

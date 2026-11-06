@@ -1,0 +1,170 @@
+.map-mode {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+}
+
+.map-mode::-webkit-scrollbar {
+  display: none;
+}
+
+.map-sheet {
+  flex: none;
+  margin: auto;
+}
+
+.map-stage {
+  position: relative;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 55%);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.map-art,
+.map-places {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-places {
+  overflow: visible;
+}
+
+.map-plot {
+  fill: rgb(234 220 185 / 55%);
+  stroke: #7a6a52;
+  stroke-width: 0.16;
+  stroke-dasharray: 0.5 0.4;
+}
+
+.map-place {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-shape {
+  stroke: #4a3b2b;
+  stroke-width: 0.24;
+  transition: stroke 0.12s ease, filter 0.12s ease;
+}
+
+.map-roof {
+  fill: #a99178;
+}
+
+.map-place.is-open .map-roof {
+  fill: #b4543d;
+}
+
+.map-ridge {
+  stroke: rgb(46 30 20 / 45%);
+  stroke-width: 0.2;
+}
+
+.map-door {
+  fill: #2c1d13;
+}
+
+.map-castle {
+  fill: #a49d93;
+}
+
+.map-castle-keep {
+  fill: #8d867d;
+  stroke: #4a3b2b;
+  stroke-width: 0.18;
+}
+
+.map-castle-merlon {
+  fill: #4a3b2b;
+}
+
+.map-castle-tower {
+  fill: #8d867d;
+  stroke: #4a3b2b;
+  stroke-width: 0.22;
+}
+
+.map-garden {
+  fill: #9cb478;
+}
+
+.map-hedge {
+  fill: #6f8a4f;
+}
+
+.map-garden-path {
+  stroke: #e3d4ad;
+  stroke-width: 0.9;
+}
+
+.map-colosseum {
+  fill: #c9a87d;
+}
+
+.map-colosseum-ring {
+  fill: none;
+  stroke: #8f7350;
+  stroke-width: 0.3;
+  stroke-dasharray: 0.7 0.5;
+}
+
+.map-arena {
+  fill: #e2cb9c;
+  stroke: #8f7350;
+  stroke-width: 0.2;
+}
+
+.map-gate-arch {
+  fill: #2a2420;
+}
+
+.map-label {
+  fill: #3a2d20;
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 2.1px;
+  font-style: italic;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #efe3c4;
+  stroke-width: 0.55;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.map-place.is-open .map-label {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.map-gate-label {
+  fill: #f1e5cc;
+  stroke: #2a2420;
+}
+
+.map-place:hover .map-shape {
+  filter: brightness(1.1);
+}
+
+.map-place:focus-visible .map-shape,
+.map-place.is-selected .map-shape {
+  stroke: #e0a548;
+  stroke-width: 0.5;
+}
+
+.map-place:focus-visible .map-label,
+.map-place.is-selected .map-label {
+  stroke: #f7d58f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-shape {
+    transition: none;
+  }
+}

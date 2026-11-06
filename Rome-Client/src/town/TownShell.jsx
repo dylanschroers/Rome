@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import PlacesPanel from '../components/PlacesPanel'
-import { readSavedMode } from '../modes/modeChoice'
+import { chooseMode } from '../modes/modeChoice'
 import { MODES } from '../modes/registry'
 import { generateTown } from '../world/map'
 import { findPlace, townAddress } from '../world/places'
@@ -31,8 +31,8 @@ const TownShell = forwardRef(function TownShell({ active, onLeave }, ref) {
   const timerRef = useRef(null)
   const map = useMemo(() => generateTown(), [])
   const [debug] = useState(readDebugFlag)
-  const [modeId] = useState(readSavedMode)
-  const Mode = MODES[modeId].Component
+  const [mode] = useState(() => MODES[chooseMode(window.location.search)])
+  const Mode = mode.Component
   const startAt = useRef(searchParams.get('at')).current
   const [district, setDistrict] = useState('')
   const [showHint, setShowHint] = useState(!findPlace(map, startAt))
@@ -142,7 +142,7 @@ const TownShell = forwardRef(function TownShell({ active, onLeave }, ref) {
   return (
     <main
       ref={rootRef}
-      className={`town-game${active ? ' is-active' : ''}`}
+      className={`town-game is-${mode.id}${active ? ' is-active' : ''}`}
       tabIndex={-1}
       aria-label="Rome"
     >
@@ -155,13 +155,13 @@ const TownShell = forwardRef(function TownShell({ active, onLeave }, ref) {
           </svg>
         </button>
         <h1 className="town-district" aria-live="polite">{district}</h1>
-        <button ref={placesButtonRef} type="button" className="town-places" onClick={openPanel}>
-          Places
-        </button>
-
-        {showHint && !nearby && !gatePrompt && (
-          <p className="town-hint">Arrow keys or WASD to walk, Shift to run, or tap where you want to go</p>
+        {mode.placesPanel && (
+          <button ref={placesButtonRef} type="button" className="town-places" onClick={openPanel}>
+            Places
+          </button>
         )}
+
+        {showHint && !nearby && !gatePrompt && <p className="town-hint">{mode.hint}</p>}
 
         {nearby?.open && (
           <button type="button" className="town-prompt" onClick={() => modeRef.current?.enterNearby()}>
