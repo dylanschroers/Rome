@@ -94,11 +94,6 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.user-id {
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
 .back-btn {
   background: rgba(255, 255, 255, 0.2);
   color: white;
@@ -115,14 +110,6 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-.message-board {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 15px;
-  height: 100%;
-}
-
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -130,13 +117,6 @@
   border-radius: 8px;
   padding: 15px;
   background: #f9f9f9;
-}
-
-.no-messages {
-  text-align: center;
-  color: #999;
-  padding: 20px;
-  font-style: italic;
 }
 
 .message {
@@ -148,38 +128,9 @@
   word-wrap: break-word;
 }
 
-.message-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
-  font-size: 0.85rem;
-}
-
-.message-header strong {
-  color: #2c3e50;
-  font-weight: 600;
-}
-
-.message-header strong.own-user {
-  color: #3498db;
-}
-
 .timestamp {
   color: #999;
   font-size: 0.75rem;
-}
-
-.message-content {
-  color: #555;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.message-form {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
 }
 
 .message-input {

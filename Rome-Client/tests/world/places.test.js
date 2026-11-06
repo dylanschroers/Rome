@@ -20,7 +20,7 @@ test('only the working places have somewhere to go', () => {
   const open = listPlaces(map).filter((place) => place.open)
   assert.deepEqual(open.map((place) => [place.id, place.path]), [
     ['school', '/school'],
-    ['tavern', '/messages'],
+    ['tavern', '/tavern'],
   ])
   assert.ok(listPlaces(map).filter((place) => !place.open).every((place) => place.path === null))
 })

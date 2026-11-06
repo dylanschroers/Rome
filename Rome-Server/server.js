@@ -19,7 +19,15 @@ app.use(cors());
 app.use(express.json());
 
 // In-memory storage
-const messages = []; // { userId, content, timestamp }
+const messages = []; // { id, userId, name, content, timestamp }
+const MAX_MESSAGES = 200;
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_NAME_LENGTH = 24;
+let nextMessageId = 1;
+
+const cleanText = (value, limit) => (
+  typeof value === 'string' ? value.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, limit) : ''
+);
 
 // REST API endpoints
 app.get('/api/messages', (req, res) => {
@@ -92,16 +100,21 @@ io.on('connection', (socket) => {
 
   // Broadcast new message to all connected clients
   socket.on('message:post', (data) => {
-    const { userId, content } = data;
+    const content = cleanText(data?.content, MAX_MESSAGE_LENGTH);
+    const userId = cleanText(data?.userId, 64);
+    if (!content || !userId) return;
 
     const message = {
+      id: nextMessageId++,
       userId,
+      name: cleanText(data?.name, MAX_NAME_LENGTH).replace(/\s+/g, ' ') || 'Traveler',
       content,
       timestamp: new Date().toISOString()
     };
 
     messages.push(message);
-    
+    if (messages.length > MAX_MESSAGES) messages.splice(0, messages.length - MAX_MESSAGES);
+
     // Broadcast to all clients
     io.emit('message:new', message);
   });

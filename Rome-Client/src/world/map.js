@@ -36,7 +36,7 @@ const PLOTS = [
   { district: 'market', id: 'news', name: 'News', angle: -155 },
   { district: 'market', id: 'theater', name: 'Theater', angle: 165 },
   { district: 'market', id: 'school', name: 'School', angle: 15, path: '/school' },
-  { district: 'market', id: 'tavern', name: 'Tavern', angle: 125, path: '/messages' },
+  { district: 'market', id: 'tavern', name: 'Tavern', angle: 125, path: '/tavern' },
   { district: 'market', id: 'garage', name: 'Garage', angle: 55 },
   ...[-150, -120, -60, -30, 30, 60, 120, 150].map((angle) => (
     { district: 'residential', name: 'Empty plot', angle }
