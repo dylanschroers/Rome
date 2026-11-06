@@ -58,6 +58,7 @@ function TableCard({ table, me, busy, onSit, onLeave }) {
         ))}
       </div>
       <p className="tavern-table-name">{table.name}</p>
+      {table.game && !table.game.over && <p className="tavern-table-game">Playing {table.game.name}</p>}
       <p className="tavern-table-people">{names.length ? names.join(', ') : 'Empty'}</p>
       {mine && (
         <button type="button" className="tavern-leave" onClick={onLeave} disabled={busy}>

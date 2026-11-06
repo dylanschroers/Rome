@@ -4,6 +4,7 @@ import { io } from 'socket.io-client'
 const SERVER = 'http://localhost:3001'
 const EMPTY_TAVERN = { here: [], tables: [] }
 const NO_TABLE = { id: null, messages: [] }
+const NO_GAME = { tableId: null, game: null }
 
 // One connection to the Tavern: the common room, who is here, the tables, and your table's talk.
 export default function useTavern(guest) {
@@ -13,6 +14,7 @@ export default function useTavern(guest) {
   const [roomHistory, setRoomHistory] = useState(0)
   const [tavern, setTavern] = useState(EMPTY_TAVERN)
   const [table, setTable] = useState(NO_TABLE)
+  const [tableGame, setTableGame] = useState(NO_GAME)
   const socketRef = useRef(null)
   const guestRef = useRef(guest)
   guestRef.current = guest
@@ -25,6 +27,7 @@ export default function useTavern(guest) {
       setStatus('offline')
       setMe(null)
       setTable(NO_TABLE)
+      setTableGame(NO_GAME)
       setTavern(EMPTY_TAVERN)
     }
 
@@ -49,6 +52,7 @@ export default function useTavern(guest) {
     socket.on('message:new', (message) => setRoomMessages((previous) => [...previous, message]))
     socket.on('tavern:state', (state) => setTavern(state && Array.isArray(state.tables) ? state : EMPTY_TAVERN))
     socket.on('table:history', ({ tableId, messages }) => setTable({ id: tableId, messages: messages || [] }))
+    socket.on('game:state', ({ tableId, game }) => setTableGame({ tableId, game: game || null }))
     socket.on('table:message', ({ tableId, message }) => {
       setTable((previous) => (previous.id === tableId ? { ...previous, messages: [...previous.messages, message] } : previous))
     })
@@ -80,9 +84,15 @@ export default function useTavern(guest) {
 
   const leaveTable = useCallback(async () => {
     const result = await request('table:leave')
-    if (result.ok) setTable(NO_TABLE)
+    if (result.ok) {
+      setTable(NO_TABLE)
+      setTableGame(NO_GAME)
+    }
     return result
   }, [request])
 
-  return { status, me, roomMessages, roomHistory, tavern, table, say, sayAtTable, sit, leaveTable }
+  const startGame = useCallback((gameId) => request('game:start', { gameId }), [request])
+  const playGame = useCallback((action) => request('game:act', action), [request])
+
+  return { status, me, roomMessages, roomHistory, tavern, table, tableGame, say, sayAtTable, sit, leaveTable, startGame, playGame }
 }

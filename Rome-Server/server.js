@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { randomInt } from 'node:crypto';
 import { createTavern } from './tavern.js';
 
 const app = express();
@@ -19,7 +20,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-const tavern = createTavern();
+const tavern = createTavern({ random: () => randomInt(0, 2 ** 32) / 2 ** 32 });
 
 // REST API endpoints
 app.get('/api/messages', (req, res) => {
@@ -89,6 +90,7 @@ const reply = (ack, result) => {
 };
 const tableRoom = (tableId) => `table:${tableId}`;
 const shareTavern = () => io.to('tavern').emit('tavern:state', tavern.snapshot());
+const shareGame = (tableId) => io.to(tableRoom(tableId)).emit('game:state', { tableId, game: tavern.gameAt(tableId) });
 
 io.on('connection', (socket) => {
   socket.emit('messages:init', tavern.roomHistory());
@@ -117,9 +119,13 @@ io.on('connection', (socket) => {
     const result = tavern.sit(socket.id, data?.tableId, data?.seat);
     reply(ack, result);
     if (!result.ok || !result.moved) return;
-    if (result.left) socket.leave(tableRoom(result.left));
+    if (result.left) {
+      socket.leave(tableRoom(result.left));
+      shareGame(result.left);
+    }
     socket.join(tableRoom(result.tableId));
     socket.emit('table:history', { tableId: result.tableId, messages: tavern.tableHistory(result.tableId) });
+    socket.emit('game:state', { tableId: result.tableId, game: tavern.gameAt(result.tableId) });
     shareTavern();
   });
 
@@ -128,6 +134,7 @@ io.on('connection', (socket) => {
     reply(ack, result);
     if (!result.ok) return;
     socket.leave(tableRoom(result.tableId));
+    shareGame(result.tableId);
     shareTavern();
   });
 
@@ -137,8 +144,26 @@ io.on('connection', (socket) => {
     if (result.ok) io.to(tableRoom(result.tableId)).emit('table:message', { tableId: result.tableId, message: result.message });
   });
 
+  socket.on('game:start', (data, ack) => {
+    const result = tavern.startGame(socket.id, data?.gameId);
+    reply(ack, result);
+    if (!result.ok) return;
+    shareGame(result.tableId);
+    shareTavern();
+  });
+
+  socket.on('game:act', (action, ack) => {
+    const result = tavern.playGame(socket.id, action);
+    reply(ack, result);
+    if (!result.ok) return;
+    shareGame(result.tableId);
+    if (tavern.gameAt(result.tableId)?.over) shareTavern();
+  });
+
   socket.on('disconnect', () => {
-    if (tavern.leave(socket.id).wasHere) shareTavern();
+    const { wasHere, tableId } = tavern.leave(socket.id);
+    if (tableId) shareGame(tableId);
+    if (wasHere) shareTavern();
   });
 });
 

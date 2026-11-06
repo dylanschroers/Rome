@@ -1,3 +1,5 @@
+import { findGame } from '../shared/games/index.js';
+
 export const MAX_MESSAGE_LENGTH = 500;
 export const MAX_NAME_LENGTH = 24;
 export const MAX_ROOM_MESSAGES = 200;
@@ -31,7 +33,7 @@ const cleanGuestId = (value) => {
 
 // Everything the Tavern knows: who is in the room, who sits where, and what was said.
 // Connections are identified by an id the caller chooses, such as the socket id.
-export function createTavern({ now = () => Date.now(), makeId } = {}) {
+export function createTavern({ now = () => Date.now(), makeId, random = Math.random } = {}) {
   let nextPresence = 1;
   let nextMessage = 1;
   const newPresenceId = makeId || (() => `p${nextPresence++}`);
@@ -41,6 +43,7 @@ export function createTavern({ now = () => Date.now(), makeId } = {}) {
     ...table,
     seats: Array(SEATS_PER_TABLE).fill(null),
     messages: [],
+    game: null,
   }));
 
   const findTable = (id) => tables.find((table) => table.id === id) || null;
@@ -74,9 +77,14 @@ export function createTavern({ now = () => Date.now(), makeId } = {}) {
   function standUp(guest) {
     const place = seatOf(guest.presenceId);
     if (!place) return null;
-    place.table.seats[place.seat] = null;
-    if (place.table.seats.every((seat) => seat === null)) place.table.messages = [];
-    return place.table.id;
+    const { table } = place;
+    table.seats[place.seat] = null;
+    if (table.game && !table.game.over) table.game = findGame(table.game.game).leave(table.game, guest.presenceId);
+    if (table.seats.every((seat) => seat === null)) {
+      table.messages = [];
+      table.game = null;
+    }
+    return table.id;
   }
 
   return {
@@ -174,6 +182,38 @@ export function createTavern({ now = () => Date.now(), makeId } = {}) {
       return { ok: true, message, tableId: place.table.id };
     },
 
+    startGame(connectionId, gameId) {
+      const guest = guests.get(connectionId);
+      if (!guest) return { ok: false, reason: 'not-here' };
+      const place = seatOf(guest.presenceId);
+      if (!place) return { ok: false, reason: 'not-seated' };
+      const game = findGame(gameId);
+      if (!game) return { ok: false, reason: 'no-game' };
+      const { table } = place;
+      if (table.game && !table.game.over) return { ok: false, reason: 'game-running' };
+      const byPresence = new Map([...guests.values()].map((other) => [other.presenceId, other]));
+      const players = table.seats.filter(Boolean).map((id) => ({ id, name: byPresence.get(id)?.name ?? 'Traveler' }));
+      if (players.length < game.minPlayers) return { ok: false, reason: 'need-players' };
+      if (players.length > game.maxPlayers) return { ok: false, reason: 'too-many-players' };
+      table.game = game.start(players, { random });
+      return { ok: true, tableId: table.id };
+    },
+
+    playGame(connectionId, action) {
+      const guest = guests.get(connectionId);
+      if (!guest) return { ok: false, reason: 'not-here' };
+      const place = seatOf(guest.presenceId);
+      if (!place) return { ok: false, reason: 'not-seated' };
+      const { table } = place;
+      if (!table.game) return { ok: false, reason: 'no-game' };
+      const result = findGame(table.game.game).act(table.game, guest.presenceId, action, { random });
+      if (!result.ok) return result;
+      table.game = result.state;
+      return { ok: true, tableId: table.id };
+    },
+
+    gameAt: (tableId) => findTable(tableId)?.game ?? null,
+
     roomHistory: () => [...roomMessages],
 
     tableHistory(tableId) {
@@ -187,6 +227,7 @@ export function createTavern({ now = () => Date.now(), makeId } = {}) {
         tables: tables.map((table) => ({
           id: table.id,
           name: table.name,
+          game: table.game ? { id: table.game.game, name: findGame(table.game.game).name, over: table.game.over } : null,
           seats: table.seats.map((presenceId) => {
             const guest = byPresence.get(presenceId);
             return guest ? { id: guest.presenceId, name: guest.name } : null;

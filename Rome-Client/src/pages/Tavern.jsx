@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import GamePanel from '../games/GamePanel'
 import ChatLog from '../tavern/ChatLog'
 import TablesPanel from '../tavern/TablesPanel'
 import { MAX_NAME, cleanName, readGuest, saveGuest } from '../tavern/guest'
@@ -108,10 +109,11 @@ export default function Tavern() {
   const navigate = useNavigate()
   const wide = useWideScreen()
   const [guest, setGuest] = useState(() => readGuest())
-  const { status, me, roomMessages, roomHistory, tavern, table, say, sayAtTable, sit, leaveTable } = useTavern(guest)
+  const { status, me, roomMessages, roomHistory, tavern, table, tableGame, say, sayAtTable, sit, leaveTable, startGame, playGame } = useTavern(guest)
   const [view, setView] = useState(() => (window.matchMedia(WIDE_SCREEN).matches ? 'room' : 'tables'))
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  const [gameBusy, setGameBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [seen, setSeen] = useState({ room: 0, table: 0 })
   const noticeTimer = useRef(null)
@@ -119,6 +121,7 @@ export default function Tavern() {
 
   const seat = findSeat(tavern.tables, me)
   const tableMessages = seat && table.id === seat.table.id ? table.messages : []
+  const game = seat && tableGame.tableId === seat.table.id ? tableGame.game : null
   const chat = view === 'table' && seat ? 'table' : 'room'
   const showTables = wide || view === 'tables'
   const showChat = wide || view !== 'tables'
@@ -176,6 +179,13 @@ export default function Tavern() {
     setBusy(false)
     if (!result.ok) tell(refusalText(result.reason))
     setView(wide ? 'room' : 'tables')
+  }
+
+  const runGame = async (request) => {
+    setGameBusy(true)
+    const result = await request()
+    setGameBusy(false)
+    if (!result.ok) tell(refusalText(result.reason))
   }
 
   const send = async (event) => {
@@ -255,6 +265,16 @@ export default function Tavern() {
                 hidden={chat !== 'room'}
                 emptyText={status === 'offline' ? 'The common room is closed for now.' : 'The room is quiet. Say something to start the talk.'}
               />
+              {chat === 'table' && seat && (
+                <GamePanel
+                  table={seat.table}
+                  game={game}
+                  me={me}
+                  busy={gameBusy || status !== 'online'}
+                  onStart={(gameId) => runGame(() => startGame(gameId))}
+                  onAct={(action) => runGame(() => playGame(action))}
+                />
+              )}
               <ChatLog
                 id="tavern-table"
                 label={seat ? `${seat.table.name} chat` : 'Table chat'}

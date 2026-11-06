@@ -623,3 +623,349 @@ button.tavern-seat:disabled {
     transition: none;
   }
 }
+
+/* ------------------------------------------------------------ Table games */
+
+.tavern-table-game {
+  color: var(--tavern-gold);
+  font-size: 0.75rem;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+}
+
+.tavern-game {
+  flex: none;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 3px solid var(--tavern-wood-dark);
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgb(60 110 70 / 55%), rgb(20 45 28 / 90%)),
+    #1f3a26;
+  box-shadow:
+    inset 0 0 0 2px #5a3b24,
+    inset 0 8px 20px rgb(0 0 0 / 45%),
+    0 8px 20px rgb(0 0 0 / 40%);
+}
+
+.tavern-game.is-idle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tavern-game-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.tavern-game-name {
+  font-size: 1.1rem;
+}
+
+.tavern-game-blurb {
+  color: #d9ccb0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.tavern-game-need {
+  margin-top: 2px;
+  color: #b9c9a8;
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.farkle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.farkle-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  list-style: none;
+}
+
+.farkle-player {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  padding: 6px 9px;
+  border-radius: 4px;
+  background: rgb(10 20 12 / 45%);
+  font-size: 0.86rem;
+}
+
+.farkle-player.is-turn {
+  box-shadow: inset 0 0 0 1px var(--tavern-gold);
+}
+
+.farkle-player.is-winner {
+  background: rgb(240 189 113 / 22%);
+}
+
+.farkle-player-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.farkle-player-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.farkle-player-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.farkle-progress {
+  grid-column: 1 / -1;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.farkle-progress span {
+  display: block;
+  height: 100%;
+  background: var(--tavern-gold);
+}
+
+.farkle-tag {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 14%);
+  font-size: 0.68rem;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
+.farkle-tag.is-gold {
+  background: var(--tavern-gold);
+  color: var(--tavern-text);
+}
+
+.farkle-dice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.farkle-die {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #fbf3e0, #e2d3b2);
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 15%),
+    0 4px 8px rgb(0 0 0 / 45%);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+button.farkle-die {
+  cursor: pointer;
+}
+
+button.farkle-die:hover {
+  transform: translateY(-3px);
+}
+
+.farkle-die.is-selected {
+  box-shadow:
+    0 0 0 3px var(--tavern-gold),
+    0 0 14px rgb(240 189 113 / 70%),
+    0 4px 8px rgb(0 0 0 / 45%);
+  transform: translateY(-5px);
+}
+
+.farkle-die.is-held {
+  opacity: 0.5;
+  transform: translateY(6px) scale(0.86);
+}
+
+.farkle-die.is-rolling {
+  animation: farkle-roll 0.45s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.farkle-pips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.farkle-pips span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.farkle-pips span.is-on {
+  background: #2b1d12;
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 60%);
+}
+
+.farkle-status {
+  min-height: 1.3em;
+  color: #f6e7c6;
+  font-size: 0.92rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.farkle-status:empty {
+  display: none;
+}
+
+.farkle-turn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 0.9rem;
+}
+
+.farkle-preview {
+  color: var(--tavern-gold);
+}
+
+.farkle-prompt {
+  color: #d9ccb0;
+  font-style: italic;
+}
+
+.farkle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.farkle-button {
+  min-width: 132px;
+  padding: 9px 16px;
+  border: 2px solid #1e1712;
+  border-radius: 3px;
+  outline: 1px solid #927652;
+  outline-offset: -5px;
+  background: #3a2618;
+  color: #f5e8cc;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgb(4 4 8 / 45%);
+  transition: filter 0.15s ease;
+}
+
+.farkle-button.is-main {
+  background: repeating-linear-gradient(90deg, #5a3b24 0 38px, #4e321e 38px 40px, #583925 40px 80px);
+}
+
+.farkle-button:not(:disabled):hover {
+  filter: brightness(1.2);
+}
+
+.farkle-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.farkle-watching {
+  color: #d9ccb0;
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.farkle-help {
+  color: #d9ccb0;
+  font-size: 0.84rem;
+}
+
+.farkle-help summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.farkle-help ul {
+  margin-top: 6px;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+
+.farkle-button:focus-visible,
+.farkle-die:focus-visible,
+.farkle-help summary:focus-visible {
+  outline: 3px solid var(--tavern-gold);
+  outline-offset: 2px;
+}
+
+@keyframes farkle-roll {
+  0% {
+    transform: translateY(-14px) rotate(-200deg) scale(0.8);
+    opacity: 0.2;
+  }
+  70% {
+    transform: translateY(2px) rotate(12deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .tavern-game {
+    padding: 10px;
+  }
+
+  .farkle-die {
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+  }
+
+  .farkle-dice {
+    gap: 8px;
+  }
+
+  .tavern-game-offer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farkle-die,
+  .farkle-button {
+    transition: none;
+  }
+
+  .farkle-die.is-rolling {
+    animation: none;
+  }
+}
