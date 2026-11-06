@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { generateTown, isWalkable } from '../../src/game/map.js'
-import { doorStart, findPlace, listPlaces, placeNear, placeUnderTile, townAddress } from '../../src/game/places.js'
-import { findRoute } from '../../src/game/route.js'
-import { WALK_TILES_PER_SECOND, createWalker, placeWalker, stepWalker } from '../../src/game/walker.js'
+import { generateTown, isWalkable } from '../../src/world/map.js'
+import { doorStart, findPlace, listPlaces, placeNear, legacyAddress, placeUnderTile, townAddress } from '../../src/world/places.js'
+import { findRoute } from '../../src/world/route.js'
+import { WALK_TILES_PER_SECOND, createWalker, placeWalker, stepWalker } from '../../src/modes/topdown/walker.js'
 
 const map = generateTown()
 const TICK = 1000 / 60
@@ -78,7 +78,18 @@ test('unknown place ids find nothing', () => {
 })
 
 test('a place address links back to its door', () => {
-  assert.equal(townAddress('school'), '/town-test?at=school')
+  assert.equal(townAddress('school'), '/town?at=school')
+})
+
+test('old town addresses lead to the same spot in the new town', () => {
+  assert.equal(legacyAddress('/town-test', '?at=tavern&debug'), '/town?at=tavern&debug')
+  assert.equal(legacyAddress('/town-test'), '/town')
+  assert.equal(legacyAddress('/town-messages', '?x=1'), '/town?at=tavern')
+  assert.equal(legacyAddress('/city/forum'), '/town')
+  assert.equal(legacyAddress('/city/market', '?at=school'), '/town')
+  assert.equal(legacyAddress('/city'), '/town')
+  assert.equal(legacyAddress('/cityscape'), null)
+  assert.equal(legacyAddress('/school'), null)
 })
 
 test('running covers twice the ground of walking', () => {

@@ -1,8 +1,8 @@
 import { createKeyStack, directionForKey } from './keys.js'
-import { districtNameAt, generateTown } from './map.js'
-import { doorStart, findPlace, placeNear, placeUnderTile } from './places.js'
+import { districtNameAt, gateExitRow, generateTown, isAtGateExit, isGateTile, isLeavingByGate } from '../../world/map.js'
+import { doorStart, findPlace, placeNear, placeUnderTile } from '../../world/places.js'
 import { buildGroundCanvas, buildSolidCanvas, drawFrame, drawMiniMap } from './render.js'
-import { findRoute } from './route.js'
+import { findRoute } from '../../world/route.js'
 import { computeCamera, computeLayout, screenToTile } from './view.js'
 import { createWalker, placeWalker, routeStart, stepWalker, walkerPosition } from './walker.js'
 
@@ -14,22 +14,23 @@ const TEXT_ENTRY = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 const ENTER_KEYS = new Set(['KeyE', 'Enter', 'Space'])
 const RUN_KEYS = new Set(['ShiftLeft', 'ShiftRight'])
 
-// Starts the game on a canvas and returns a function that stops it and cleans up.
-// React only mounts this; game state stays in here and never re-renders the page.
 export function createGame({
   canvas,
   container,
   labels,
+  map = generateTown(),
   startAt,
+  active: startActive = true,
   onDistrict,
   onFirstMove,
   onNearby,
+  onAtGate,
   onEnterPlace,
   onOpenPlaces,
+  onLeaveTown,
   onDebug,
   debug: startDebug,
 }) {
-  const map = generateTown()
   const ctx = canvas.getContext('2d', { alpha: false })
   const ground = buildGroundCanvas(map)
   const keys = createKeyStack()
@@ -57,6 +58,11 @@ export function createGame({
   let paused = false
   let nearby = null
   let pendingPlace = null
+  let pendingLeave = false
+  let atGate = false
+  let leaving = false
+  let active = startActive
+  let scripted = false
 
   function placeLabels() {
     labels.style.setProperty('--game-pixel', `${layout.cssPerPixel}px`)
@@ -96,7 +102,11 @@ export function createGame({
     leftover += Math.min(elapsed, LONGEST_FRAME_MS)
     const held = keys.current()
 
-    if (held) pendingPlace = null
+    if (held) {
+      pendingPlace = null
+      pendingLeave = false
+      scripted = false
+    }
 
     if (held && marker) {
       marker = null
@@ -123,7 +133,9 @@ export function createGame({
       dirty = true
     }
 
-    if (!moved && walker.moving) {
+    if (scripted && !walker.moving && walker.route.length === 0) scripted = false
+
+    if (!moved && walker.moving && !scripted) {
       moved = true
       onFirstMove()
     }
@@ -140,11 +152,37 @@ export function createGame({
       onNearby(near)
     }
 
-    if (pendingPlace && !walker.moving && walker.route.length === 0) {
+    const gateNow = !scripted && isAtGateExit(map, walker.x, walker.y)
+    if (gateNow !== atGate) {
+      atGate = gateNow
+      onAtGate(gateNow)
+    }
+
+    if (walker.moving || walker.route.length > 0) return
+
+    if (pendingPlace) {
       const place = pendingPlace
       pendingPlace = null
       if (near === place) onEnterPlace(place)
     }
+
+    if (isLeavingByGate(map, walker.x, walker.y, held) || (pendingLeave && gateNow)) leaveByGate()
+    pendingLeave = false
+  }
+
+  function leaveByGate() {
+    if (leaving || !active) return
+    leaving = true
+    pendingPlace = null
+    pendingLeave = false
+    releaseEverything()
+    onLeaveTown()
+  }
+
+  function redraw() {
+    if (!layout) return
+    update(0)
+    render()
   }
 
   function render() {
@@ -175,7 +213,7 @@ export function createGame({
   }
 
   function start() {
-    if (frame !== null) return
+    if (frame !== null || !active || document.hidden) return
     lastTime = performance.now()
     framesSince = lastTime
     frames = 0
@@ -201,7 +239,7 @@ export function createGame({
       return
     }
 
-    if (paused) return
+    if (paused || !active) return
 
     if (RUN_KEYS.has(event.code)) {
       running = true
@@ -215,9 +253,13 @@ export function createGame({
 
     if (ENTER_KEYS.has(event.code)) {
       if (event.target?.closest?.('button, a') && event.code !== 'KeyE') return
-      if (nearby?.open && !event.repeat) {
+      if (event.repeat) return
+      if (nearby?.open) {
         event.preventDefault()
         onEnterPlace(nearby)
+      } else if (atGate && !nearby) {
+        event.preventDefault()
+        leaveByGate()
       }
       return
     }
@@ -233,7 +275,7 @@ export function createGame({
     keys.release(event.code)
   }
 
-  const releaseEverything = () => {
+  function releaseEverything() {
     keys.clear()
     running = false
   }
@@ -245,7 +287,7 @@ export function createGame({
   }
 
   const onPointerDown = (event) => {
-    if (event.button !== 0 || paused) return
+    if (event.button !== 0 || paused || !active) return
     pointer = { id: event.pointerId, x: event.clientX, y: event.clientY }
   }
 
@@ -257,12 +299,16 @@ export function createGame({
 
     const box = canvas.getBoundingClientRect()
     const target = screenToTile(event.clientX - box.left, event.clientY - box.top, layout, camera)
-    const place = placeUnderTile(map, target.x, target.y)
-    const route = findRoute(map, routeStart(walker), place ? place.door : target)
+    const toGate = isGateTile(map, target.x, target.y)
+    const place = toGate ? null : placeUnderTile(map, target.x, target.y)
+    const goal = toGate ? { x: target.x, y: gateExitRow(map) } : place ? place.door : target
+    const route = findRoute(map, routeStart(walker), goal)
     walker.route = route
     walker.autoRun = route.length > AUTO_RUN_TILES
     keys.clear()
     pendingPlace = place?.open ? place : null
+    pendingLeave = toGate
+    scripted = false
     marker = route.length ? route[route.length - 1] : null
     dirty = true
   }
@@ -285,13 +331,8 @@ export function createGame({
   resize()
   if (debug) onDebug({})
 
-  // Draw straight away, so the town shows even before the browser's first frame.
-  if (layout) {
-    update(0)
-    render()
-  }
-
-  if (!document.hidden) start()
+  redraw()
+  start()
 
   return {
     map,
@@ -305,9 +346,35 @@ export function createGame({
       placeWalker(walker, door.x, door.y, door.facing)
       marker = null
       pendingPlace = null
-      if (layout) {
-        update(0)
-        render()
+      redraw()
+    },
+    walkIn({ instant = false } = {}) {
+      const row = gateExitRow(map)
+      if (instant) {
+        placeWalker(walker, map.spawn.x, map.spawn.y, map.spawn.facing)
+      } else {
+        placeWalker(walker, map.spawn.x, row, 'up')
+        walker.route = [{ x: map.spawn.x, y: row - 1 }, { x: map.spawn.x, y: row - 2 }]
+        scripted = true
+      }
+      marker = null
+      pendingPlace = null
+      pendingLeave = false
+      leaving = false
+      releaseEverything()
+      redraw()
+    },
+    leaveByGate,
+    setActive(value) {
+      active = value
+      leaving = false
+      leftover = 0
+      releaseEverything()
+      if (active) {
+        dirty = true
+        start()
+      } else {
+        stop()
       }
     },
     setPaused(value) {
@@ -329,6 +396,8 @@ export function createGame({
       marker,
       running: frame !== null,
       paused,
+      active,
+      atGate,
       nearby: nearby?.id ?? null,
       runningKey: running,
       autoRun: walker.autoRun,

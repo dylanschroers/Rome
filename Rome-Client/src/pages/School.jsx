@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { townAddress } from '../game/places'
+import { townAddress } from '../world/places'
 import './School.css'
 
 export default function School() {

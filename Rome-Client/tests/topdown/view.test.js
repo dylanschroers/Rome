@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { TILE_SIZE, generateTown } from '../../src/game/map.js'
-import { computeCamera, computeLayout, screenToTile } from '../../src/game/view.js'
+import { TILE_SIZE, generateTown } from '../../src/world/map.js'
+import { computeCamera, computeLayout, screenToTile } from '../../src/modes/topdown/view.js'
 
 const map = generateTown()
 

@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { MAP_HEIGHT, MAP_WIDTH, TILE, districtNameAt, generateTown, isWalkable } from '../../src/game/map.js'
-import { findRoute } from '../../src/game/route.js'
-import { routeSeconds } from '../../src/game/walker.js'
+import {
+  MAP_HEIGHT, MAP_WIDTH, TILE, districtNameAt, gateExitRow, generateTown, isAtGateExit, isGateTile, isLeavingByGate, isWalkable,
+} from '../../src/world/map.js'
+import { findRoute } from '../../src/world/route.js'
+import { routeSeconds } from '../../src/modes/topdown/walker.js'
 
 const map = generateTown()
 const spawn = map.spawn
@@ -162,4 +164,34 @@ test('standing at a landmark door names the landmark, even on its stairs', () =>
     const { door } = named(name)
     assert.equal(districtNameAt(map, door.x, door.y), name)
   }
+})
+
+test('the row just inside the gate is where the town can be left', () => {
+  const map = generateTown()
+  const row = gateExitRow(map)
+  assert.equal(row, map.gate.y - 1)
+  for (let x = map.gate.x; x < map.gate.x + map.gate.width; x += 1) {
+    assert.ok(isWalkable(map, x, row))
+    assert.ok(isAtGateExit(map, x, row))
+  }
+  assert.ok(!isAtGateExit(map, map.gate.x - 1, row))
+  assert.ok(!isAtGateExit(map, map.gate.x + map.gate.width, row))
+  assert.ok(!isAtGateExit(map, map.spawn.x, map.spawn.y))
+})
+
+test('only heading down at the gate row leaves the town', () => {
+  const map = generateTown()
+  const x = map.gate.x + 1
+  const row = gateExitRow(map)
+  for (const direction of ['down', 'down-left', 'down-right']) assert.ok(isLeavingByGate(map, x, row, direction))
+  for (const direction of ['up', 'left', 'right', 'up-left', null]) assert.ok(!isLeavingByGate(map, x, row, direction))
+  assert.ok(!isLeavingByGate(map, x, row - 1, 'down'))
+})
+
+test('the gate itself and the ground past it count as the gate', () => {
+  const map = generateTown()
+  assert.ok(isGateTile(map, map.gate.x, map.gate.y))
+  assert.ok(isGateTile(map, map.gate.x + map.gate.width - 1, map.height - 1))
+  assert.ok(!isGateTile(map, map.gate.x - 1, map.gate.y))
+  assert.ok(!isGateTile(map, map.gate.x, map.gate.y - 1))
 })

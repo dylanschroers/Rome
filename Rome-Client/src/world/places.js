@@ -1,4 +1,4 @@
-export const TOWN_PATH = '/town-test'
+export const TOWN_PATH = '/town'
 
 const REACH_TILES = 1
 const ROOF_TILES = 2
@@ -36,4 +36,11 @@ export function placeUnderTile(map, x, y) {
     && y >= place.y - ROOF_TILES
     && y < place.y + place.height
   )) || null
+}
+
+export function legacyAddress(pathname, search = '') {
+  if (pathname === '/town-test') return `${TOWN_PATH}${search}`
+  if (pathname === '/town-messages') return townAddress('tavern')
+  if (pathname === '/city' || pathname.startsWith('/city/')) return TOWN_PATH
+  return null
 }

@@ -1,20 +1,77 @@
-.town-messages-page {
-  height: 100vh;
+.header {
   display: flex;
-  flex-direction: column;
-  padding: 20px;
-  overflow: hidden;
-  animation: pageTransitionIn 0.5s ease-out;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  margin-bottom: 15px;
+  animation: slideDown 0.6s ease-out;
 }
 
-@keyframes pageTransitionIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+.header-content {
+  flex: 1;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 5px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.footer {
+  text-align: center;
+  color: white;
+  opacity: 0.9;
+  font-size: 0.85rem;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .header-content {
+    text-align: center;
+  }
+
+  .back-btn {
+    align-self: center;
+  }
+
+  .header h1 {
+    font-size: 2rem;
   }
 }
 
@@ -56,56 +113,6 @@
 
 .back-btn:hover {
   background: rgba(255, 255, 255, 0.3);
-}
-
-.combined-main {
-  display: flex;
-  gap: 20px;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Left side - Town (60%) */
-.town-section {
-  flex: 0 0 60%;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  animation: slideInLeft 0.6s ease-out;
-}
-
-.town-section h2 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 1.5rem;
-}
-
-.town-map {
-  width: 100%;
-  height: auto;
-  flex: 1;
-  min-height: 300px;
-}
-
-/* Right side - Messages (40%) */
-.messages-section {
-  flex: 0 0 40%;
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  animation: slideInRight 0.6s ease-out;
-}
-
-.messages-section h2 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 1.5rem;
 }
 
 .message-board {
@@ -219,54 +226,6 @@
   margin-top: auto;
 }
 
-.building {
-  transition: opacity 0.2s ease;
-}
-
-.building:hover {
-  opacity: 0.85;
-}
-
-.building:hover rect:first-child {
-  stroke: #fff;
-  stroke-width: 3;
-  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Scrollbar styling for messages container */
 .messages-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -285,29 +244,7 @@
   background: #888;
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-  .combined-main {
-    gap: 15px;
-  }
-
-  .town-section,
-  .messages-section {
-    padding: 15px;
-  }
-}
-
 @media (max-width: 768px) {
-  .combined-main {
-    flex-direction: column;
-  }
-
-  .town-section,
-  .messages-section {
-    flex: 0 0 auto;
-    min-height: 400px;
-  }
-
   .header {
     flex-direction: column;
     gap: 15px;

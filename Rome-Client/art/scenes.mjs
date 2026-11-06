@@ -1,6 +1,6 @@
 // Source art for the pre-rendered city scenes. Edit this file, then run
 // `npm run build:art` to regenerate the images in src/assets/scenes.
-// The gate is drawn in a 1600 x 900 space. Street art lives in art/streets.mjs.
+// The gate and its passage are drawn in a 1600 x 900 space.
 
 const WIDTH = 1600
 const HEIGHT = 900
@@ -171,3 +171,105 @@ export const flame = (output) => svg(`
   <path d="M75 72C99 97 93 130 75 130C57 130 51 97 75 72Z" fill="#e7913f" />
   <path d="M75 94C86 108 84 126 75 126C66 126 64 108 75 94Z" fill="#ffdb8a" />
 `, { width: 150, height: 170, ...output })
+
+// ------------------------------------------------------------- Gate passage
+
+// The tunnel through the gatehouse, with the Market lit up at the far end. Each ring
+// is the far opening scaled out from the vanishing point, so the vault stays true.
+const VANISH = { x: 800, y: 560 }
+const FAR = { half: 112, spring: -38, bottom: 92 }
+const RING_SCALES = [1, 1.09, 1.2, 1.33, 1.5, 1.72, 2, 2.4, 3, 4, 6, 9]
+
+function ringPath(scale) {
+  const half = FAR.half * scale
+  const left = VANISH.x - half
+  const right = VANISH.x + half
+  const spring = VANISH.y + FAR.spring * scale
+  const bottom = VANISH.y + FAR.bottom * scale
+  return `M${left} ${bottom}V${spring}A${half} ${half} 0 0 1 ${right} ${spring}V${bottom}Z`
+}
+
+const mix = (from, to, amount) => {
+  const parse = (hex) => [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16))
+  const a = parse(from)
+  const b = parse(to)
+  return `#${a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, '0')).join('')}`
+}
+
+function floorPoint(scale, side) {
+  return `${VANISH.x + side * FAR.half * scale},${VANISH.y + FAR.bottom * scale}`
+}
+
+export const gatePassage = (output) => {
+  const rings = [...RING_SCALES].reverse()
+  const nearest = rings[0]
+  const wallRings = rings.map((scale, index) => {
+    const light = 1 - Math.log(scale) / Math.log(nearest)
+    const base = mix('#141219', '#7a6252', light ** 1.6)
+    const fill = index % 2 ? base : mix(base, '#0d0c11', 0.18)
+    return `<path d="${ringPath(scale)}" fill="${fill}" />`
+  }).join('')
+
+  const floorBands = rings.slice(0, -1).map((scale, index) => {
+    const next = rings[index + 1]
+    const light = 1 - Math.log(next) / Math.log(nearest)
+    const fill = mix('#1c1a1e', '#9a8466', light ** 1.5)
+    return `<polygon points="${floorPoint(scale, -1)} ${floorPoint(scale, 1)} ${floorPoint(next, 1)} ${floorPoint(next, -1)}" fill="${fill}" />`
+  }).join('')
+
+  const courses = [-0.95, -0.7, -0.45, -0.2, 0.05, 0.3, 0.55, 0.8].map((height) => {
+    const y = VANISH.y + FAR.bottom * nearest - (FAR.bottom - FAR.spring) * nearest * (height + 1) / 2.2
+    return `<path d="M${VANISH.x - FAR.half * nearest} ${y}L${VANISH.x} ${VANISH.y}L${VANISH.x + FAR.half * nearest} ${y}" />`
+  }).join('')
+
+  const ribs = [1.2, 1.5, 2, 3, 6].map((scale) => (
+    `<path d="${ringPath(scale)}" fill="none" stroke-width="${3 + scale * 2.2}" />`
+  )).join('')
+
+  const seams = [-0.6, -0.2, 0.2, 0.6].map((offset) => (
+    `<path d="M${VANISH.x + offset * FAR.half} ${VANISH.y + FAR.bottom}L${VANISH.x + offset * FAR.half * nearest} ${VANISH.y + FAR.bottom * nearest}" />`
+  )).join('')
+
+  return svg(`
+  <defs>
+    <linearGradient id="market-light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e2b0" />
+      <stop offset="0.62" stop-color="#f0cf8c" />
+      <stop offset="0.63" stop-color="#c9ad7d" />
+      <stop offset="1" stop-color="#b39771" />
+    </linearGradient>
+    <radialGradient id="spill" cx="${VANISH.x}" cy="${VANISH.y + 40}" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd28a" stop-opacity="0.55" />
+      <stop offset="0.45" stop-color="#e9a861" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#e9a861" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="near-dark" cx="${VANISH.x}" cy="${VANISH.y}" r="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0.35" stop-color="#07070c" stop-opacity="0" />
+      <stop offset="1" stop-color="#07070c" stop-opacity="0.85" />
+    </radialGradient>
+    <clipPath id="far-opening"><path d="${ringPath(1)}" /></clipPath>
+    <clipPath id="tunnel"><path d="${ringPath(nearest)}" /></clipPath>
+    ${grainFilter('passage-grain', 0.75, 9, 0.9)}
+  </defs>
+
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="#0b0b12" />
+  ${wallRings}
+  <g clip-path="url(#tunnel)">
+    <g stroke="#0d0c11" stroke-width="3" opacity="0.4" fill="none">${courses}</g>
+    <g stroke="#0d0c11" opacity="0.55">${ribs}</g>
+    ${floorBands}
+    <g stroke="#141217" stroke-width="3" opacity="0.35">${seams}</g>
+  </g>
+
+  <g clip-path="url(#far-opening)">
+    <rect x="${VANISH.x - FAR.half}" y="${VANISH.y + FAR.spring - FAR.half}" width="${FAR.half * 2}" height="${FAR.bottom - FAR.spring + FAR.half}" fill="url(#market-light)" />
+    <path d="M${VANISH.x - 104} ${VANISH.y + 2}h46v-34h-46zM${VANISH.x + 52} ${VANISH.y + 6}h54v-40h-54z" fill="#c58a5a" opacity="0.55" />
+    <path d="M${VANISH.x - 110} ${VANISH.y - 32}l26 -16l26 16zM${VANISH.x + 46} ${VANISH.y - 34}l30 -18l30 18z" fill="#9b5f45" opacity="0.6" />
+    <circle cx="${VANISH.x}" cy="${VANISH.y + 30}" r="16" fill="#8d8f96" opacity="0.5" />
+  </g>
+
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#spill)" />
+  <rect width="${WIDTH}" height="${HEIGHT}" filter="url(#passage-grain)" opacity="0.22" />
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#near-dark)" />
+`, output)
+}

@@ -1,4 +1,4 @@
-import { canStep } from './map.js'
+import { canStep } from '../../world/map.js'
 
 export const WALK_TILES_PER_SECOND = 6
 export const RUN_SPEED_MULTIPLIER = 2

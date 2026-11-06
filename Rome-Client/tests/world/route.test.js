@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { canStep, generateTown, isWalkable } from '../../src/game/map.js'
-import { findRoute } from '../../src/game/route.js'
+import { canStep, generateTown, isWalkable } from '../../src/world/map.js'
+import { findRoute } from '../../src/world/route.js'
 
 const map = generateTown()
 const market = map.districts.find((item) => item.id === 'market')

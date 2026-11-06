@@ -1,4 +1,4 @@
-import { TILE_SIZE } from './map.js'
+import { TILE_SIZE } from '../../world/map.js'
 
 // The game always shows at least this many low-resolution pixels each way. Larger
 // screens show more of the town, and small ones stay zoomed in enough to read.

@@ -1,24 +1,21 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Scenes from '../components/Scenes'
-import { DISTRICTS, FIRST_DISTRICT, CITY_IMAGES } from '../city/districts'
+import TownShell from '../town/TownShell'
 import useMotionTier from '../hooks/useMotionTier'
+import { TOWN_PATH } from '../world/places'
 import doorLeft from '../assets/scenes/door-left.webp'
 import doorRight from '../assets/scenes/door-right.webp'
 import flame from '../assets/scenes/flame.webp'
+import gatePassage from '../assets/scenes/gate-passage.webp'
 import gateWall from '../assets/scenes/gate-wall.webp'
-import town from '../assets/scenes/town.webp'
-// Town.css still holds the header and footer styles other pages rely on.
-import './Town.css'
 import '../styles/City.css'
 
 const TRANSITION_MS = { full: 1820, lite: 1040 }
 const LOAD_LIMIT_MS = 1500
 
-// Decoded images are kept here so returning to the city never decodes them again.
+// Kept so returning to the gate never decodes the images again.
 const keptImages = []
 let gateReady = null
-let cityImagesRequested = false
 
 function decodeAll(sources) {
   return Promise.all(
@@ -33,17 +30,10 @@ function decodeAll(sources) {
 
 function loadGate() {
   gateReady ||= Promise.race([
-    decodeAll([town, gateWall, doorLeft, doorRight, flame]),
-    // A slow or stalled decode should never leave the visitor locked out.
+    decodeAll([gatePassage, gateWall, doorLeft, doorRight, flame]),
     new Promise((resolve) => setTimeout(resolve, LOAD_LIMIT_MS)),
   ])
   return gateReady
-}
-
-function loadCityImages() {
-  if (cityImagesRequested) return
-  cityImagesRequested = true
-  decodeAll(CITY_IMAGES)
 }
 
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -52,22 +42,22 @@ function SceneImage(props) {
   return <img alt="" decoding="sync" draggable="false" {...props} />
 }
 
-// The gate and the city scenes are one stage that stays loaded while the URL
-// changes. The URL decides where the visitor should be, so the page buttons and
-// the browser's back and forward buttons all run the same transition.
+// The gate and the town stay mounted together while the URL changes. The URL decides
+// where the visitor should be, so page buttons and browser back and forward all run
+// the same transition.
 export default function City() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const pathDistrict = pathname.startsWith('/city/') ? pathname.split('/')[2] : null
-  const target = pathDistrict ? 'inside' : 'outside'
-  const district = DISTRICTS[pathDistrict] ? pathDistrict : FIRST_DISTRICT
+  const target = pathname === TOWN_PATH ? 'inside' : 'outside'
   const [phase, setPhase] = useState(target)
   const [ready, setReady] = useState(false)
-  const [leaving, setLeaving] = useState(false)
+  const [fromTown, setFromTown] = useState(false)
+  const [townMounted, setTownMounted] = useState(target === 'inside')
   const lastTarget = useRef(target)
   const walked = useRef(false)
+  const arriving = useRef(false)
   const enterButtonRef = useRef(null)
-  const scenesRef = useRef(null)
+  const townRef = useRef(null)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
   const tier = useMotionTier({ phase, ready })
@@ -75,8 +65,9 @@ export default function City() {
   useEffect(() => {
     let active = true
     loadGate().then(() => {
-      if (active) setReady(true)
-      loadCityImages()
+      if (!active) return
+      setReady(true)
+      setTownMounted(true)
     })
     return () => {
       active = false
@@ -88,31 +79,27 @@ export default function City() {
     lastTarget.current = target
 
     if (target === 'inside') {
-      setLeaving(false)
-      if (prefersReducedMotion()) {
-        setPhase('inside')
-      } else {
-        walked.current = true
-        setPhase('entering')
+      setFromTown(false)
+      if (phaseRef.current === 'inside') {
+        townRef.current?.fadeIn()
+        return
       }
+      setTownMounted(true)
+      arriving.current = true
+      walked.current = true
+      setPhase(prefersReducedMotion() ? 'inside' : 'entering')
       return
     }
 
-    // Leaving: the view first returns to what's seen through the gate.
     const leave = async () => {
       if (phaseRef.current === 'inside') {
-        setLeaving(true)
-        await scenesRef.current?.prepareToLeave()
+        setFromTown(true)
+        await townRef.current?.fadeOut()
       }
       if (lastTarget.current !== 'outside') return
 
-      setLeaving(false)
-      if (prefersReducedMotion()) {
-        setPhase('outside')
-      } else {
-        walked.current = true
-        setPhase('returning')
-      }
+      walked.current = true
+      setPhase(prefersReducedMotion() ? 'outside' : 'returning')
     }
 
     leave()
@@ -129,19 +116,29 @@ export default function City() {
   }, [phase, tier])
 
   useEffect(() => {
+    if (phase !== 'inside' || !arriving.current) return
+    arriving.current = false
+    townRef.current?.walkIn()
+    townRef.current?.focus()
+  }, [phase])
+
+  useEffect(() => {
+    if (phase === 'outside') setFromTown(false)
     if (phase === 'outside' && walked.current && ready) {
       enterButtonRef.current?.focus({ preventScroll: true })
     }
   }, [phase, ready])
 
   const enter = () => {
-    if (phase === 'outside' && ready) navigate(`/city/${FIRST_DISTRICT}`)
+    if (phase === 'outside' && ready) navigate(TOWN_PATH)
   }
 
+  const leaveTown = useCallback(() => navigate('/'), [navigate])
+
   return (
-    <main className={`city is-${phase} is-${tier}${ready ? ' is-ready' : ''}`}>
-      <div className="city-scene">
-        <SceneImage className="city-town" src={town} />
+    <div className={`city is-${phase} is-${tier}${ready ? ' is-ready' : ''}${fromTown ? ' is-from-town' : ''}`}>
+      <div className="city-scene" aria-hidden={phase === 'inside'}>
+        <SceneImage className="city-town" src={gatePassage} />
 
         <div className="city-frame" aria-hidden="true">
           <div className="city-doors">
@@ -155,18 +152,12 @@ export default function City() {
         </div>
       </div>
 
-      <Scenes
-        ref={scenesRef}
-        active={phase === 'inside'}
-        district={district}
-        tier={tier}
-        leaving={leaving}
-        focusOnArrival={walked.current}
-        onLeaveCity={() => navigate('/')}
-      />
+      <div className="city-shade" aria-hidden="true" />
+
+      {townMounted && <TownShell ref={townRef} active={phase === 'inside'} onLeave={leaveTown} />}
 
       {phase !== 'inside' && (
-        <>
+        <main className="gate-page">
           <header className="gate-title gate-ui">
             <h1>Rome</h1>
           </header>
@@ -180,8 +171,8 @@ export default function City() {
           >
             Enter the city
           </button>
-        </>
+        </main>
       )}
-    </main>
+    </div>
   )
 }

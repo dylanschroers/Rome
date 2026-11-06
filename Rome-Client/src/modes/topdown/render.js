@@ -1,4 +1,4 @@
-import { TILE, TILE_SIZE } from './map.js'
+import { TILE, TILE_SIZE } from '../../world/map.js'
 import { walkerPosition } from './walker.js'
 
 // Placeholder colors. Real pixel art replaces all of this in Phase 5.

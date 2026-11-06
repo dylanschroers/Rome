@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
-import { townAddress } from '../game/places'
+import { townAddress } from '../world/places'
 
 export default function Messages() {
   const navigate = useNavigate()

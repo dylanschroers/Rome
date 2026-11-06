@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createKeyStack, directionForKey } from '../../src/game/keys.js'
-import { generateTown, isWalkable } from '../../src/game/map.js'
-import { findRoute } from '../../src/game/route.js'
-import { WALK_TILES_PER_SECOND, createWalker, routeStart, stepWalker, walkerPosition } from '../../src/game/walker.js'
+import { createKeyStack, directionForKey } from '../../src/modes/topdown/keys.js'
+import { generateTown, isWalkable } from '../../src/world/map.js'
+import { findRoute } from '../../src/world/route.js'
+import { WALK_TILES_PER_SECOND, createWalker, routeStart, stepWalker, walkerPosition } from '../../src/modes/topdown/walker.js'
 
 const map = generateTown()
 const market = map.districts.find((item) => item.id === 'market')

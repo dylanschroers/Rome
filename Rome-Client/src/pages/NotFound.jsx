@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { TOWN_PATH } from '../game/places'
-import '../styles/TownTest.css'
+import { TOWN_PATH } from '../world/places'
+import '../styles/NotFound.css'
 
 export default function NotFound() {
   return (

@@ -196,6 +196,29 @@
   animation: city-fade-in 0.3s ease 1.5s both;
 }
 
+/* ------------------------------------------------ Darkness between scenes */
+
+.city-shade {
+  position: absolute;
+  inset: 0;
+  background: #0b0b12;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.is-entering .city-shade {
+  opacity: 1;
+  transition: opacity 0.42s linear 1.38s;
+}
+
+.is-returning .city-shade {
+  transition: opacity 0.3s linear;
+}
+
+.is-returning.is-from-town .city-shade {
+  animation: city-shade-out 0.4s linear both;
+}
+
 /* -------------------------------------------- Lighter mode for weak devices */
 
 .is-lite .city-town,
@@ -234,6 +257,14 @@
 
 .is-lite.is-returning .gate-ui {
   animation-delay: 0.75s;
+}
+
+.is-lite.is-entering .city-shade {
+  transition: opacity 0.3s linear 0.72s;
+}
+
+.is-lite.is-returning.is-from-town .city-shade {
+  animation-duration: 0.28s;
 }
 
 /* ---------------------------------------------------------------- Gate page */
@@ -302,6 +333,15 @@
   }
   to {
     transform: scale(0.95, 1.07) rotate(2.5deg);
+  }
+}
+
+@keyframes city-shade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

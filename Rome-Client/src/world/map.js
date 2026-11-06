@@ -246,3 +246,19 @@ export function districtNameAt(map, x, y) {
   }
   return best ? best.name : 'The road'
 }
+
+const isUnderGate = (map, x) => x >= map.gate.x && x < map.gate.x + map.gate.width
+
+export const gateExitRow = (map) => map.gate.y - 1
+
+export function isAtGateExit(map, x, y) {
+  return y === gateExitRow(map) && isUnderGate(map, x)
+}
+
+export function isLeavingByGate(map, x, y, direction) {
+  return isAtGateExit(map, x, y) && typeof direction === 'string' && direction.startsWith('down')
+}
+
+export function isGateTile(map, x, y) {
+  return y >= map.gate.y && isUnderGate(map, x)
+}

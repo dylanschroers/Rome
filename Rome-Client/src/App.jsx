@@ -1,12 +1,17 @@
-import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom'
+import './styles/Pages.css'
 import Messages from './pages/Messages'
 import City from './pages/City'
-import TownTest from './pages/TownTest'
 import NotFound from './pages/NotFound'
-import TownMessages from './pages/TownMessages'
 import School from './pages/School'
 import LanguagesChat from './pages/LanguagesChat'
+import { TOWN_PATH, legacyAddress } from './world/places'
 import './App.css'
+
+function OldAddress() {
+  const { pathname, search } = useLocation()
+  return <Navigate to={legacyAddress(pathname, search) || TOWN_PATH} replace />
+}
 
 function App() {
   return (
@@ -15,12 +20,12 @@ function App() {
         <Routes>
           <Route element={<City />}>
             <Route path="/" element={null} />
-            <Route path="/city/:district" element={null} />
+            <Route path={TOWN_PATH} element={null} />
           </Route>
-          <Route path="/town" element={<Navigate to="/town-test" replace />} />
-          <Route path="/town-test" element={<TownTest />} />
+          <Route path="/town-test" element={<OldAddress />} />
+          <Route path="/town-messages" element={<OldAddress />} />
+          <Route path="/city/*" element={<OldAddress />} />
           <Route path="/messages" element={<Messages />} />
-          <Route path="/town-messages" element={<TownMessages />} />
           <Route path="/school" element={<School />} />
           <Route path="/school/languages" element={<LanguagesChat />} />
           <Route path="*" element={<NotFound />} />
