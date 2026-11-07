@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom'
 import './styles/Pages.css'
 import Tavern from './pages/Tavern'
+import Library from './pages/Library'
 import City from './pages/City'
 import NotFound from './pages/NotFound'
 import School from './pages/School'
@@ -27,6 +28,7 @@ function App() {
           <Route path="/city/*" element={<OldAddress />} />
           <Route path="/tavern" element={<Tavern />} />
           <Route path="/messages" element={<Navigate to="/tavern" replace />} />
+          <Route path="/library" element={<Library />} />
           <Route path="/school" element={<School />} />
           <Route path="/school/languages" element={<LanguagesChat />} />
           <Route path="*" element={<NotFound />} />

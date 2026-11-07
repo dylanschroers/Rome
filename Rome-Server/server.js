@@ -4,6 +4,10 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { randomInt } from 'node:crypto';
 import { createTavern } from './tavern.js';
+import { createLibrary } from './library.js';
+import { createLibraryRouter } from './libraryRoutes.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,9 +19,11 @@ const io = new Server(httpServer, {
 });
 
 const PORT = 3001;
+const LIBRARY_DIR = process.env.LIBRARY_DIR ? path.resolve(process.env.LIBRARY_DIR) : fileURLToPath(new URL('./library-data', import.meta.url));
 
 // Middleware
 app.use(cors());
+app.use('/api/library', createLibraryRouter(createLibrary({ root: LIBRARY_DIR }), { uploadDir: path.join(LIBRARY_DIR, 'uploads') }));
 app.use(express.json());
 
 const tavern = createTavern({ random: () => randomInt(0, 2 ** 32) / 2 ** 32 });

@@ -19,6 +19,7 @@ test('every named place has a unique id, and empty plots have none', () => {
 test('only the working places have somewhere to go', () => {
   const open = listPlaces(map).filter((place) => place.open)
   assert.deepEqual(open.map((place) => [place.id, place.path]), [
+    ['library', '/library'],
     ['school', '/school'],
     ['tavern', '/tavern'],
   ])

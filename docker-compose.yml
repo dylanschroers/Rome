@@ -24,6 +24,8 @@ services:
     environment:
       - NODE_ENV=development
       - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - library_data:/app/library-data
     depends_on:
       - ollama
     networks:
@@ -32,6 +34,7 @@ services:
 
 volumes:
   ollama_data:
+  library_data:
 
 networks:
   rome-network:

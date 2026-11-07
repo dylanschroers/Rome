@@ -32,7 +32,7 @@ export const PLACE_GROUPS = [
 
 // Angles are in degrees, clockwise from east, with gaps left where paths leave a plaza.
 const PLOTS = [
-  { district: 'market', id: 'library', name: 'Library', angle: -115 },
+  { district: 'market', id: 'library', name: 'Library', angle: -115, path: '/library' },
   { district: 'market', id: 'news', name: 'News', angle: -155 },
   { district: 'market', id: 'theater', name: 'Theater', angle: 165 },
   { district: 'market', id: 'school', name: 'School', angle: 15, path: '/school' },
