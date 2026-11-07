@@ -78,7 +78,7 @@ test('a game starts with everyone at zero, waiting for the first roll', () => {
   assert.equal(state.dice.length, DICE_COUNT);
   assert.equal(state.target, 5000);
   assert.equal(findGame('farkle').name, 'Farkle');
-  assert.equal(findGame('chess'), null);
+  assert.equal(findGame('backgammon'), null);
   assert.equal(findGame('constructor'), null);
 });
 

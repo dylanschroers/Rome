@@ -114,6 +114,7 @@ export default function Tavern() {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [gameBusy, setGameBusy] = useState(false)
+  const [leftPane, setLeftPane] = useState('game')
   const [notice, setNotice] = useState('')
   const [seen, setSeen] = useState({ room: 0, table: 0 })
   const noticeTimer = useRef(null)
@@ -171,6 +172,7 @@ export default function Tavern() {
       return
     }
     setView('table')
+    setLeftPane('game')
   }
 
   const standUp = async () => {
@@ -225,6 +227,27 @@ export default function Tavern() {
     </div>
   )
 
+  const tablesPanel = (
+    <TablesPanel
+      tavern={tavern}
+      me={me}
+      busy={busy || status !== 'online'}
+      hidden={!showTables}
+      onSit={sitDown}
+      onLeave={standUp}
+    />
+  )
+  const gamePanel = seat && (
+    <GamePanel
+      table={seat.table}
+      game={game}
+      me={me}
+      busy={gameBusy || status !== 'online'}
+      onStart={(gameId) => runGame(() => startGame(gameId))}
+      onAct={(action) => runGame(() => playGame(action))}
+    />
+  )
+
   return (
     <div className={`tavern${wide ? ' is-wide' : ''}`}>
       <div className="tavern-glow" aria-hidden="true" />
@@ -243,16 +266,17 @@ export default function Tavern() {
 
       <div className="tavern-room">
         {!wide && tabList}
-        <TablesPanel
-          tavern={tavern}
-          me={me}
-          busy={busy || status !== 'online'}
-          hidden={!showTables}
-          onSit={sitDown}
-          onLeave={standUp}
-        />
+        {wide && seat ? (
+          <section className="tavern-play">
+            <div className="tavern-pane-switch" role="group" aria-label="Left side shows">
+              <button type="button" aria-pressed={leftPane === 'game'} onClick={() => setLeftPane('game')}>{seat.table.name}</button>
+              <button type="button" aria-pressed={leftPane === 'tables'} onClick={() => setLeftPane('tables')}>All tables</button>
+            </div>
+            {leftPane === 'game' ? gamePanel : tablesPanel}
+          </section>
+        ) : tablesPanel}
 
-        <main className="tavern-chat" hidden={!showChat}>
+        <main className={`tavern-chat${chat === 'table' ? ' is-table' : ''}`} hidden={!showChat}>
           {wide && tabList}
 
           {showChat && (
@@ -265,16 +289,7 @@ export default function Tavern() {
                 hidden={chat !== 'room'}
                 emptyText={status === 'offline' ? 'The common room is closed for now.' : 'The room is quiet. Say something to start the talk.'}
               />
-              {chat === 'table' && seat && (
-                <GamePanel
-                  table={seat.table}
-                  game={game}
-                  me={me}
-                  busy={gameBusy || status !== 'online'}
-                  onStart={(gameId) => runGame(() => startGame(gameId))}
-                  onAct={(action) => runGame(() => playGame(action))}
-                />
-              )}
+              {!wide && chat === 'table' && seat && gamePanel}
               <ChatLog
                 id="tavern-table"
                 label={seat ? `${seat.table.name} chat` : 'Table chat'}

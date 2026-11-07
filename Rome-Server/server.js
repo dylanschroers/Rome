@@ -90,7 +90,10 @@ const reply = (ack, result) => {
 };
 const tableRoom = (tableId) => `table:${tableId}`;
 const shareTavern = () => io.to('tavern').emit('tavern:state', tavern.snapshot());
-const shareGame = (tableId) => io.to(tableRoom(tableId)).emit('game:state', { tableId, game: tavern.gameAt(tableId) });
+const shareGame = async (tableId) => {
+  const sockets = await io.in(tableRoom(tableId)).fetchSockets();
+  for (const member of sockets) member.emit('game:state', { tableId, game: tavern.gameViewFor(member.id, tableId) });
+};
 
 io.on('connection', (socket) => {
   socket.emit('messages:init', tavern.roomHistory());
@@ -125,7 +128,7 @@ io.on('connection', (socket) => {
     }
     socket.join(tableRoom(result.tableId));
     socket.emit('table:history', { tableId: result.tableId, messages: tavern.tableHistory(result.tableId) });
-    socket.emit('game:state', { tableId: result.tableId, game: tavern.gameAt(result.tableId) });
+    socket.emit('game:state', { tableId: result.tableId, game: tavern.gameViewFor(socket.id, result.tableId) });
     shareTavern();
   });
 

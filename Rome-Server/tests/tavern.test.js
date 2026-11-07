@@ -161,7 +161,7 @@ function seatedPair() {
 test('a game needs a seat, a real game, and enough players', () => {
   const tavern = seatedPair();
   assert.deepEqual(tavern.startGame('b', 'farkle'), { ok: false, reason: 'not-seated' });
-  assert.deepEqual(tavern.startGame('a', 'chess'), { ok: false, reason: 'no-game' });
+  assert.deepEqual(tavern.startGame('a', 'backgammon'), { ok: false, reason: 'no-game' });
   assert.deepEqual(tavern.startGame('a', 'farkle'), { ok: false, reason: 'need-players' });
   tavern.sit('b', 'hearth');
   assert.deepEqual(tavern.startGame('a', 'farkle'), { ok: true, tableId: 'hearth' });
@@ -221,4 +221,29 @@ test('a finished game can be followed by a new one', () => {
   tavern.sit('b', 'hearth');
   assert.equal(tavern.startGame('b', 'farkle').ok, true);
   assert.equal(tavern.gameAt('hearth').over, false);
+});
+
+test('each player gets their own view of a hidden-card game', () => {
+  const tavern = seatedPair();
+  tavern.sit('b', 'hearth');
+  tavern.join('c', { guestId: 'g3', name: 'Cy' });
+  tavern.sit('c', 'hearth');
+  assert.deepEqual(tavern.startGame('a', 'chess'), { ok: false, reason: 'too-many-players' });
+  tavern.leaveTable('c');
+  assert.equal(tavern.startGame('a', 'poker').ok, true);
+  const annSees = tavern.gameViewFor('a', 'hearth');
+  const boSees = tavern.gameViewFor('b', 'hearth');
+  const annSeat = annSees.players.findIndex((player) => player.name === 'Ann');
+  assert.ok(annSees.players[annSeat].cards.every(Boolean));
+  assert.ok(boSees.players[annSeat].cards.every((card) => card === null));
+  assert.equal(annSees.deck, undefined);
+  assert.ok(Array.isArray(tavern.gameAt('hearth').deck));
+  assert.equal(tavern.gameViewFor('nobody', 'nowhere'), null);
+});
+
+test('chess is for exactly two', () => {
+  const tavern = seatedPair();
+  tavern.sit('b', 'hearth');
+  assert.equal(tavern.startGame('b', 'chess').ok, true);
+  assert.equal(tavern.gameAt('hearth').players.length, 2);
 });

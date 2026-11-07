@@ -1,4 +1,4 @@
-import { findGame } from '../shared/games/index.js';
+import { findGame, viewFor } from '../shared/games/index.js';
 
 export const MAX_MESSAGE_LENGTH = 500;
 export const MAX_NAME_LENGTH = 24;
@@ -213,6 +213,11 @@ export function createTavern({ now = () => Date.now(), makeId, random = Math.ran
     },
 
     gameAt: (tableId) => findTable(tableId)?.game ?? null,
+
+    gameViewFor(connectionId, tableId) {
+      const game = findTable(tableId)?.game ?? null;
+      return viewFor(game, guests.get(connectionId)?.presenceId ?? null);
+    },
 
     roomHistory: () => [...roomMessages],
 
